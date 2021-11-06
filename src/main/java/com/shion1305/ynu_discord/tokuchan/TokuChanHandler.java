@@ -35,18 +35,6 @@ public class TokuChanHandler implements ServletContextListener {
     Color[] colors = new Color[]{Color.BLACK, Color.BLUE, Color.BISMARK, Color.BROWN, Color.CINNABAR, Color.CYAN, Color.DARK_GOLDENROD, Color.DEEP_LILAC
             , Color.ENDEAVOUR, Color.GRAY, Color.LIGHT_GRAY, Color.GREEN, Color.ORANGE, Color.MOON_YELLOW, Color.RED, Color.RUBY, Color.MEDIUM_SEA_GREEN, Color.VIVID_VIOLET,
             Color.SUMMER_SKY, Color.MAGENTA, Color.PINK, Color.DEEP_SEA};
-
-    public static void main(String[] args) {
-        try {
-            TokuChanHandler handler = new TokuChanHandler();
-            handler.run();
-            Thread.sleep(1000000);
-        } catch (InterruptedException e) {
-            e.printStackTrace();
-        }
-
-    }
-
     @Override
     public void contextInitialized(ServletContextEvent sce) {
         try {
@@ -62,7 +50,6 @@ public class TokuChanHandler implements ServletContextListener {
     @Override
     public void contextDestroyed(ServletContextEvent sce) {
     }
-
 
     public TokuChanHandler() {
         logger = Logger.getLogger("YNU-DISCORD=ANONYMOUS");
