@@ -35,8 +35,6 @@ public class TokuChanHandler implements ServletContextListener {
     Color[] colors = new Color[]{Color.BLACK, Color.BLUE, Color.BISMARK, Color.BROWN, Color.CINNABAR, Color.CYAN, Color.DARK_GOLDENROD, Color.DEEP_LILAC
             , Color.ENDEAVOUR, Color.GRAY, Color.LIGHT_GRAY, Color.GREEN, Color.ORANGE, Color.MOON_YELLOW, Color.RED, Color.RUBY, Color.MEDIUM_SEA_GREEN, Color.VIVID_VIOLET,
             Color.SUMMER_SKY, Color.MAGENTA, Color.PINK, Color.DEEP_SEA};
-//    String configUsersData = "TokuChanDiscordUsers.data";
-//    String configLastMsg = "TokuChanLastMessage.txt";
 
     public static void main(String[] args) {
         try {
@@ -47,34 +45,10 @@ public class TokuChanHandler implements ServletContextListener {
             e.printStackTrace();
         }
 
-//        handler.client.getChannelById(Snowflake.of(899265124681007144L))
-//                .subscribe(channel -> {
-//                    channel.getRestChannel().createMessage(EmbedCreateSpec.builder()
-//                            .color(Color.DISCORD_WHITE)
-//                            .title("ボット休止のお知らせ")
-//                            .description("サーバー動作不良のため、当分、当ボットの稼働を見合わせます。よろしくお願いします。")
-//                            .image("https://www.silhouette-illust.com/wp-content/uploads/2019/10/person_ukkari_46965-300x300.jpg").build().asRequest()).block();
-//                });
     }
 
     @Override
     public void contextInitialized(ServletContextEvent sce) {
-//        if (new File(configUsersData).exists()) {
-//            try {
-//                byte[] tempbytes = new FileInputStream(configUsersData).readAllBytes();
-//                ByteArrayInputStream bais = new ByteArrayInputStream(tempbytes);
-//                ObjectInputStream ois = new ObjectInputStream(bais);
-//                data = (HashMap) ois.readObject();
-//                ois.close();
-//                bais.close();
-//            } catch (IOException e) {
-//                e.printStackTrace();
-//            } catch (ClassNotFoundException e) {
-//                e.printStackTrace();
-//            }
-//        } else {
-//            data = new HashMap<>();
-//        }
         try {
             TokuChanHandler handler = new TokuChanHandler();
             logger.info("Initialization Started");
@@ -87,30 +61,6 @@ public class TokuChanHandler implements ServletContextListener {
 
     @Override
     public void contextDestroyed(ServletContextEvent sce) {
-//        try {
-//            ByteArrayOutputStream baos = new ByteArrayOutputStream();
-//            ObjectOutputStream oos = new ObjectOutputStream(baos);
-//            oos.writeObject(data);
-//            byte[] bytes = baos.toByteArray();
-//            FileOutputStream stream = new FileOutputStream(configUsersData);
-//            stream.write(bytes);
-//            stream.close();
-//            oos.close();
-//            baos.close();
-//        } catch (IOException e) {
-//            e.printStackTrace();
-//        }
-
-//        client.getChannelById(Snowflake.of(targetChannel)).block().getRestChannel().createMessage(EmbedCreateSpec.builder()
-//                .title("サービス停止のお知らせ")
-//                .description("サーバーメンテナンスのため一時的に利用不可となります。サーバーが利用可能になるとこのメッセージは消えます。").color(Color.DISCORD_WHITE)
-//                .build().asRequest()).doOnSuccess(messageData -> {
-//            try {
-//                new FileOutputStream(configLastMsg).write(messageData.id().asString().getBytes(StandardCharsets.UTF_8));
-//            } catch (IOException e) {
-//                e.printStackTrace();
-//            }
-//        }).block();
     }
 
 
@@ -236,8 +186,6 @@ public class TokuChanHandler implements ServletContextListener {
                 .color(Color.GREEN)
                 .build()).withComponents(ActionRow.of(Button.secondary("wd-" + mesID, "送信取り消し")));
     }
-//    private MessageCreateMono msgConfirmWithdraw(String content, MessageChannel channel, String mesID) {
-//    }
 
     private MessageData msgWithdrew(String content, MessageChannel channel) {
         return channel.getRestChannel().createMessage(EmbedCreateSpec.builder()
