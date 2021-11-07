@@ -14,18 +14,20 @@ import discord4j.core.spec.EmbedCreateSpec;
 import discord4j.discordjson.json.MessageCreateRequest;
 import discord4j.discordjson.json.MessageData;
 import discord4j.rest.util.Color;
+import org.reactivestreams.Subscriber;
+import org.reactivestreams.Subscription;
 
 import javax.servlet.ServletContextEvent;
 import javax.servlet.ServletContextListener;
 import javax.servlet.annotation.WebListener;
 import java.time.Instant;
-import java.util.HashMap;
-import java.util.Random;
+import java.util.*;
 import java.util.logging.Logger;
 
 
 @WebListener
 public class TokuChanHandler implements ServletContextListener {
+    List<Long> msgBlockList;
     GatewayDiscordClient client;
     HashMap<Long, Integer> data;
     String token;
@@ -58,6 +60,7 @@ public class TokuChanHandler implements ServletContextListener {
         client = DiscordClient.create(token).login().block();
         channel = client.getChannelById(Snowflake.of(targetChannel)).block();
         data = new HashMap<>();
+        msgBlockList = new ArrayList<>();
     }
 
     public void run() throws InterruptedException {
@@ -105,50 +108,135 @@ public class TokuChanHandler implements ServletContextListener {
         });
         client.on(ButtonInteractionEvent.class)
                 .subscribe(event -> {
-                    logger.info("ButtonInteractionEvent Detected...");
-                    String customId = event.getCustomId();
-                    logger.info("ButtonInteractionEvent CheckPoint1");
-                    if (customId.equals("YES")) {
-                        logger.info("ButtonInteractionEvent \"YES\"");
-                        int color;
-                        long userID = event.getInteraction().getUser().getId().asLong();
-                        if (data.get(userID) == null) {
-                            color = allocateColor();
-                            data.put(userID, color);
-                        } else {
-                            color = data.get(userID);
+                    if (conflictAccessManager(event.getMessage().getId().asLong())) return;
+                    try {
+                        logger.info("ButtonInteractionEvent Detected...");
+                        String customId = event.getCustomId();
+                        logger.info("ButtonInteractionEvent CheckPoint1");
+                        if (customId.equals("YES")) {
+                            logger.info("ButtonInteractionEvent \"YES\"");
+                            int color;
+                            long userID = event.getInteraction().getUser().getId().asLong();
+                            if (data.get(userID) == null) {
+                                color = allocateColor();
+                                data.put(userID, color);
+                            } else {
+                                color = data.get(userID);
+                            }
+                            logger.info("ButtonInteractionEvent \"YES\"");
+                            channel.getRestChannel().createMessage(
+                                            MessageCreateRequest.builder()
+                                                    .embed(new EmbedCreateSpec()
+                                                            .setTitle(event.getMessage().getEmbeds().get(0).getDescription().get())
+                                                            .setColor(Color.of(color))
+                                                            .asRequest())
+                                                    .build())
+                                    .doOnSuccess(messageData -> {
+                                        msgSent(event.getMessage().getEmbeds().get(0).getDescription().get(), Objects.requireNonNull(event.getMessage().getChannel().block()), messageData.id().asString());
+                                    }).doOnError(throwable -> {
+                                        logger.warning("ERROR");
+                                        logger.warning(throwable.getMessage());
+                                    })
+                                    .block();
+                            event.getMessage().delete().subscribe(new Subscriber<Void>() {
+                                @Override
+                                public void onSubscribe(Subscription s) {
+
+                                }
+
+                                @Override
+                                public void onNext(Void unused) {
+
+                                }
+
+                                @Override
+                                public void onError(Throwable t) {
+                                    t.printStackTrace();
+                                }
+
+                                @Override
+                                public void onComplete() {
+
+                                }
+                            });
+                        } else if (customId.startsWith("NO")) {
+                            logger.info("ButtonInteractionEvent \"NO\"");
+                            msgCancelDraft(Objects.requireNonNull(event.getMessage().getChannel().block()), event.getMessage().getTimestamp());
+                            event.getMessage().delete().subscribe(new Subscriber<Void>() {
+                                @Override
+                                public void onSubscribe(Subscription s) {
+
+                                }
+
+                                @Override
+                                public void onNext(Void unused) {
+
+                                }
+
+                                @Override
+                                public void onError(Throwable t) {
+                                    t.printStackTrace();
+                                }
+
+                                @Override
+                                public void onComplete() {
+
+                                }
+                            });
+                        } else if (customId.startsWith("wd-")) {
+                            client.getMessageById(Snowflake.of(targetChannel), Snowflake.of(customId.substring(3)))
+                                    .doOnError(Throwable::printStackTrace)
+                                    .subscribe(message -> {
+                                        String content = message.getEmbeds().get(0).getTitle().get();
+                                        message.delete().subscribe(new Subscriber<Void>() {
+                                            @Override
+                                            public void onSubscribe(Subscription s) {
+
+                                            }
+
+                                            @Override
+                                            public void onNext(Void unused) {
+
+                                            }
+
+                                            @Override
+                                            public void onError(Throwable t) {
+                                                t.printStackTrace();
+                                            }
+
+                                            @Override
+                                            public void onComplete() {
+
+                                            }
+                                        });
+                                        msgWithdrew(content, Objects.requireNonNull(event.getMessage().getChannel().block()));
+                                        event.getMessage().delete().subscribe(new Subscriber<Void>() {
+                                            @Override
+                                            public void onSubscribe(Subscription s) {
+
+                                            }
+
+                                            @Override
+                                            public void onNext(Void unused) {
+
+                                            }
+
+                                            @Override
+                                            public void onError(Throwable t) {
+                                                t.printStackTrace();
+                                            }
+
+                                            @Override
+                                            public void onComplete() {
+
+                                            }
+                                        });
+                                    });
                         }
-                        logger.info("ButtonInteractionEvent \"YES\"");
-                        channel.getRestChannel().createMessage(
-                                        MessageCreateRequest.builder()
-                                                .embed(new EmbedCreateSpec()
-                                                        .setTitle(event.getMessage().getEmbeds().get(0).getDescription().get())
-                                                        .setColor(Color.of(color))
-                                                        .asRequest())
-                                                .build())
-                                .doOnSuccess(messageData -> {
-                                    msgSent(event.getMessage().getEmbeds().get(0).getDescription().get(), event.getMessage().getChannel().block(), messageData.id().asString());
-                                }).doOnError(throwable -> {
-                                    logger.warning("ERROR");
-                                    logger.warning(throwable.getMessage());
-                                })
-                                .block();
-                        event.getMessage().delete().block();
-                    } else if (customId.startsWith("NO")) {
-                        logger.info("ButtonInteractionEvent \"NO\"");
-                        msgCancelDraft(event.getMessage().getChannel().block(), event.getMessage().getTimestamp());
-                        event.getMessage().delete().block();
-                    } else if (customId.startsWith("wd-")) {
-                        client.getMessageById(Snowflake.of(targetChannel), Snowflake.of(customId.substring(3)))
-                                .doOnError(Throwable::printStackTrace)
-                                .subscribe(message -> {
-                                    String content = message.getEmbeds().get(0).getTitle().get();
-                                    message.delete().block();
-                                    msgWithdrew(content, event.getMessage().getChannel().block());
-                                    event.getMessage().delete().block();
-                                });
+                    } catch (NullPointerException e) {
+                        e.printStackTrace();
                     }
-//                    event.deferEdit().block();
+//                    event.deferEdit().subscribe(subscriber);
                 });
     }
 
@@ -209,4 +297,16 @@ public class TokuChanHandler implements ServletContextListener {
             if (!data.containsValue(color)) return color;
         }
     }
+
+    private synchronized boolean conflictAccessManager(long id) {
+        if (msgBlockList.contains(id)) return true;
+        msgBlockList.add(id);
+        if (msgBlockList.size()>15){
+            msgBlockList.remove(0);
+            msgBlockList.remove(0);
+        }
+        return false;
+    }
+
+
 }
