@@ -1,4 +1,4 @@
-package com.shion1305.ynu_discord.tokuchan;//package com.shion1305.ynu_discord.tokuchan;
+//package com.shion1305.ynu_discord.tokuchan;
 //
 //import discord4j.common.util.Snowflake;
 //import discord4j.core.spec.EmbedCreateSpec;

@@ -88,7 +88,6 @@ public class TokuChanHandler implements ServletContextListener {
                                                     .setColor(Color.DISCORD_WHITE)
                                                     .setImage("https://cdn.discordapp.com/app-icons/898900972426915850/4b09f00b8b78094e931641a85077bcc3.png?size=512")
                                                     .setDescription("やぁ!  匿名化BOTの匿ちゃんだよ!\n私にDMしてくれたら自動的に情報工の匿名チャンネルに転送するよ!\n送信取り消し機能もあるので気軽に使ってみてね!\n\nメッセージについているプロフィール色はそれぞれ各個人に割り当てられている色で、いつでもリセットすることが可能です!");
-
                                         });
                                     }).block();
                         }
@@ -119,7 +118,7 @@ public class TokuChanHandler implements ServletContextListener {
                         } else {
                             color = data.get(userID);
                         }
-                        logger.info("ButtonInteractionEvent \"YES\"-11");
+                        logger.info("ButtonInteractionEvent \"YES\"");
                         channel.getRestChannel().createMessage(
                                         MessageCreateRequest.builder()
                                                 .embed(new EmbedCreateSpec()
@@ -134,7 +133,6 @@ public class TokuChanHandler implements ServletContextListener {
                                     logger.warning(throwable.getMessage());
                                 })
                                 .block();
-                        logger.info("ButtonInteractionEvent \"YES\"-2");
                         event.getMessage().delete().block();
                     } else if (customId.startsWith("NO")) {
                         logger.info("ButtonInteractionEvent \"NO\"");
