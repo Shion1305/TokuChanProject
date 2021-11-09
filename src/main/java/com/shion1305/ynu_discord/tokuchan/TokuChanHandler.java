@@ -24,19 +24,27 @@ import java.time.Instant;
 import java.util.*;
 import java.util.logging.Logger;
 
-
 @WebListener
 public class TokuChanHandler implements ServletContextListener {
+    private static String targetChannel = "901379148063322173";
     List<Long> msgBlockList;
     GatewayDiscordClient client;
     HashMap<Long, Integer> data;
     String token;
     Logger logger;
-    private static String targetChannel = "901379148063322173";
     Channel channel;
     Color[] colors = new Color[]{Color.BLACK, Color.BLUE, Color.BISMARK, Color.BROWN, Color.CINNABAR, Color.CYAN, Color.DARK_GOLDENROD, Color.DEEP_LILAC
             , Color.ENDEAVOUR, Color.GRAY, Color.LIGHT_GRAY, Color.GREEN, Color.ORANGE, Color.MOON_YELLOW, Color.RED, Color.RUBY, Color.MEDIUM_SEA_GREEN, Color.VIVID_VIOLET,
             Color.SUMMER_SKY, Color.MAGENTA, Color.PINK, Color.DEEP_SEA};
+
+    public TokuChanHandler() {
+        logger = Logger.getLogger("YNU-DISCORD=ANONYMOUS");
+        token = "OTAwODQzMDc2OTUwNTg1MzQ0.YXHNfg.XN7tCyebPiWyoIBHUUZ4QaYTq7c";
+        client = DiscordClient.create(token).login().block();
+        channel = Objects.requireNonNull(client).getChannelById(Snowflake.of(targetChannel)).block();
+        data = new HashMap<>();
+        msgBlockList = new ArrayList<>();
+    }
 
     @Override
     public void contextInitialized(ServletContextEvent sce) {
@@ -54,29 +62,31 @@ public class TokuChanHandler implements ServletContextListener {
     public void contextDestroyed(ServletContextEvent sce) {
     }
 
-    public TokuChanHandler() {
-        logger = Logger.getLogger("YNU-DISCORD=ANONYMOUS");
-        token = "OTAwODQzMDc2OTUwNTg1MzQ0.YXHNfg.XN7tCyebPiWyoIBHUUZ4QaYTq7c";
-        client = DiscordClient.create(token).login().block();
-        channel = client.getChannelById(Snowflake.of(targetChannel)).block();
-        data = new HashMap<>();
-        msgBlockList = new ArrayList<>();
-    }
-
-    public void run() throws InterruptedException {
+    public void run() {
         /**
          * このクラスはDMかつ!introでも!colorでもないメッセージを取得し、レスポンスを行う。
          */
         client.on(MessageCreateEvent.class)
-                .filter(event -> event.getMessage().getChannel().block().getType().getValue() == 1)
+                .filter(event -> Objects.requireNonNull(event.getMessage().getChannel().block()).getType().getValue() == 1)
+                .filter(event -> event.getMessage().getAuthor().isPresent())
+                //.isPresent() is required before getAuthor.get()
                 .filter(event -> !event.getMessage().getAuthor().get().isBot() && !event.getMessage().getContent().equals("!intro") && !event.getMessage().getContent().equals("!color"))
                 .subscribe(event -> {
-                            logger.info("User: " + event.getMessage().getAuthor().get().getUsername());
-                            MessageChannel channel = event.getMessage().getChannel().block();
-                            if (event.getMessage().getContent().length() > 200) {
-                                msgIllegalNotify(channel);
-                            } else {
-                                msgConfirm(event.getMessage().getContent(), channel);
+                            try {
+                                logger.info("User: " + event.getMessage().getAuthor().get().getUsername());
+                                MessageChannel channel = Objects.requireNonNull(event.getMessage().getChannel().block());
+                                if (event.getMessage().getContent().length() > 200) {
+                                    msgOverloadNotify(channel);
+                                }else if (event.getMessage().getContent().length()==0){
+                                    msgIllegalNotify(channel);
+                                } else{
+                                    if (event.getMessage().getContent().length() != 0 || !event.getMessage().getAttachments().isEmpty()) {
+                                        logger.info(event.getMessage().toString());
+                                        msgConfirm(event.getMessage(), channel);
+                                    }
+                                }
+                            } catch (Exception e) {
+                                e.printStackTrace();
                             }
                         }
                 );
@@ -84,81 +94,46 @@ public class TokuChanHandler implements ServletContextListener {
         client.on(MessageCreateEvent.class)
                 .filter(event -> event.getMessage().getContent().equals("!intro"))
                 .subscribe(event -> {
-                            event.getMessage().getChannel().block().createMessage(
-                                    messageCreateSpec -> {
-                                        messageCreateSpec.addEmbed(embedCreateSpec -> {
-                                            embedCreateSpec.setTitle("\"匿ちゃん\"へようこそ!!")
-                                                    .setColor(Color.DISCORD_WHITE)
-                                                    .setImage("https://cdn.discordapp.com/app-icons/898900972426915850/4b09f00b8b78094e931641a85077bcc3.png?size=512")
-                                                    .setDescription("やぁ!  匿名化BOTの匿ちゃんだよ!\n私にDMしてくれたら自動的に情報工の匿名チャンネルに転送するよ!\n送信取り消し機能もあるので気軽に使ってみてね!\n\nメッセージについているプロフィール色はそれぞれ各個人に割り当てられている色で、いつでもリセットすることが可能です!");
-                                        });
-                                    }).block();
+                            try {
+                                Objects.requireNonNull(event.getMessage().getChannel().block()).createMessage(
+                                        messageCreateSpec -> {
+                                            messageCreateSpec.addEmbed(embedCreateSpec -> {
+                                                embedCreateSpec.setTitle("\"匿ちゃん\"へようこそ!!")
+                                                        .setColor(Color.DISCORD_WHITE)
+                                                        .setImage("https://cdn.discordapp.com/app-icons/898900972426915850/4b09f00b8b78094e931641a85077bcc3.png?size=512")
+                                                        .setDescription("やぁ!  匿名化BOTの匿ちゃんだよ!\n私にDMしてくれたら自動的に情報工の匿名チャンネルに転送するよ!\n送信取り消し機能もあるので気軽に使ってみてね!\n\nメッセージについているプロフィール色はそれぞれ各個人に割り当てられている色で、いつでもリセットすることが可能です!");
+                                            });
+                                        }).block();
+                            } catch (Exception e) {
+                                e.printStackTrace();
+                            }
                         }
                 );
 
         client.on(MessageCreateEvent.class).filter(event -> event.getMessage().getContent().equals("!color")).subscribe(event -> {
-            data.remove(event.getMessage().getAuthor().get().getUserData().id().asLong());
-            event.getMessage().getChannel().block().createMessage(
-                    messageCreateSpec -> {
-                        messageCreateSpec.addEmbed(embedCreateSpec -> {
-                            embedCreateSpec.setTitle("プロフィール色をリセットしました!")
-                                    .setColor(Color.DISCORD_WHITE).asRequest();
-                        });
-                    }).block();
+            try {
+                data.remove(event.getMessage().getAuthor().get().getUserData().id().asLong());
+                Objects.requireNonNull(event.getMessage().getChannel().block()).createMessage(
+                        messageCreateSpec -> {
+                            messageCreateSpec.addEmbed(embedCreateSpec -> {
+                                embedCreateSpec.setTitle("プロフィール色をリセットしました!")
+                                        .setColor(Color.DISCORD_WHITE).asRequest();
+                            });
+                        }).block();
+            } catch (Exception e) {
+                e.printStackTrace();
+            }
         });
         client.on(ButtonInteractionEvent.class)
                 .subscribe(event -> {
-                    if (conflictAccessManager(event.getMessage().getId().asLong())) return;
                     try {
+                        if (conflictAccessManager(event.getMessage().getId().asLong())) return;
                         logger.info("ButtonInteractionEvent Detected...");
                         String customId = event.getCustomId();
                         logger.info("ButtonInteractionEvent CheckPoint1");
                         if (customId.equals("YES")) {
                             logger.info("ButtonInteractionEvent \"YES\"");
-                            int color;
-                            long userID = event.getInteraction().getUser().getId().asLong();
-                            if (data.get(userID) == null) {
-                                color = allocateColor();
-                                data.put(userID, color);
-                            } else {
-                                color = data.get(userID);
-                            }
-                            logger.info("ButtonInteractionEvent \"YES\"");
-                            channel.getRestChannel().createMessage(
-                                            MessageCreateRequest.builder()
-                                                    .embed(new EmbedCreateSpec()
-                                                            .setTitle(event.getMessage().getEmbeds().get(0).getDescription().get())
-                                                            .setColor(Color.of(color))
-                                                            .asRequest())
-                                                    .build())
-                                    .doOnSuccess(messageData -> {
-                                        msgSent(event.getMessage().getEmbeds().get(0).getDescription().get(), Objects.requireNonNull(event.getMessage().getChannel().block()), messageData.id().asString());
-                                    }).doOnError(throwable -> {
-                                        logger.warning("ERROR");
-                                        logger.warning(throwable.getMessage());
-                                    })
-                                    .block();
-                            event.getMessage().delete().subscribe(new Subscriber<Void>() {
-                                @Override
-                                public void onSubscribe(Subscription s) {
-
-                                }
-
-                                @Override
-                                public void onNext(Void unused) {
-
-                                }
-
-                                @Override
-                                public void onError(Throwable t) {
-                                    t.printStackTrace();
-                                }
-
-                                @Override
-                                public void onComplete() {
-
-                                }
-                            });
+                            handleInteractionYes(event);
                         } else if (customId.startsWith("NO")) {
                             logger.info("ButtonInteractionEvent \"NO\"");
                             msgCancelDraft(Objects.requireNonNull(event.getMessage().getChannel().block()), event.getMessage().getTimestamp());
@@ -191,12 +166,10 @@ public class TokuChanHandler implements ServletContextListener {
                                         message.delete().subscribe(new Subscriber<Void>() {
                                             @Override
                                             public void onSubscribe(Subscription s) {
-
                                             }
 
                                             @Override
                                             public void onNext(Void unused) {
-
                                             }
 
                                             @Override
@@ -233,18 +206,17 @@ public class TokuChanHandler implements ServletContextListener {
                                         });
                                     });
                         }
-                    } catch (NullPointerException e) {
+                    } catch (Exception e) {
                         e.printStackTrace();
                     }
-//                    event.deferEdit().subscribe(subscriber);
                 });
     }
 
-    private Message msgConfirm(String content, MessageChannel messageChannel) {
+    private Message msgConfirm(Message msg, MessageChannel messageChannel) {
         return messageChannel.createMessage(messageCreateSpec -> {
             messageCreateSpec.addEmbed(embedCreateSpec -> {
                 embedCreateSpec.setTitle("以下の内容で匿名チャンネルに投稿します。よろしいですか?")
-                        .setDescription(content)
+                        .setDescription(msg.getContent())
                         .setColor(Color.DEEP_SEA);
             });
             messageCreateSpec.setComponents(ActionRow.of(Button.success("YES", "送信"), Button.danger("NO", "取り消し")));
@@ -261,11 +233,19 @@ public class TokuChanHandler implements ServletContextListener {
         }).block();
     }
 
-    private Message msgIllegalNotify(MessageChannel channel) {
+    private Message msgOverloadNotify(MessageChannel channel) {
         return channel.createMessage(messageCreateSpec -> {
             messageCreateSpec.addEmbed(embedCreateSpec -> {
                 embedCreateSpec.setTitle("文字数オーバー")
                         .setDescription("200文字以内でお願いします。").setColor(Color.RED);
+            });
+        }).block();
+    }
+    private Message msgIllegalNotify(MessageChannel channel) {
+        return channel.createMessage(messageCreateSpec -> {
+            messageCreateSpec.addEmbed(embedCreateSpec -> {
+                embedCreateSpec.setTitle("無効なメッセージ")
+                        .setDescription("画像、動画や添付ファイル、または空のメッセージは送信できません。").setColor(Color.RED);
             });
         }).block();
     }
@@ -298,15 +278,74 @@ public class TokuChanHandler implements ServletContextListener {
         }
     }
 
+
+    private void handleInteractionYes(ButtonInteractionEvent event) {
+        int color;
+        long userID = event.getInteraction().getUser().getId().asLong();
+        if (data.get(userID) == null) {
+            color = allocateColor();
+            data.put(userID, color);
+        } else {
+            color = data.get(userID);
+        }
+        logger.info("ButtonInteractionEvent \"YES\"");
+        String message = "";
+        String imgUrl = "";
+        if (event.getMessage().getEmbeds().get(0).getDescription().isPresent()) {
+            message = event.getMessage().getEmbeds().get(0).getDescription().get();
+            if (event.getMessage().getEmbeds().get(0).getImage().isPresent()) {
+                imgUrl = event.getMessage().getEmbeds().get(0).getImage().get().getUrl();
+            }
+            String finalMessage = message;
+            channel.getRestChannel().createMessage(
+                            MessageCreateRequest.builder()
+                                    .embed(new EmbedCreateSpec()
+                                            .setImage(imgUrl)
+                                            .setTitle(message)
+                                            .setColor(Color.of(color))
+                                            .asRequest())
+                                    .build())
+                    .doOnSuccess(messageData -> {
+                        msgSent(finalMessage, Objects.requireNonNull(event.getMessage().getChannel().block()), messageData.id().asString());
+                    }).doOnError(throwable -> {
+                        logger.warning("ERROR");
+                        logger.warning(throwable.getMessage());
+                    })
+                    .block();
+            event.getMessage().delete().subscribe(new Subscriber<Void>() {
+                @Override
+                public void onSubscribe(Subscription s) {
+
+                }
+
+                @Override
+                public void onNext(Void unused) {
+
+                }
+
+                @Override
+                public void onError(Throwable t) {
+                    t.printStackTrace();
+                }
+
+                @Override
+                public void onComplete() {
+
+                }
+            });
+        } else {
+            logger.info("Skipped the process because the message was empty.");
+        }
+
+    }
+
     private synchronized boolean conflictAccessManager(long id) {
         if (msgBlockList.contains(id)) return true;
         msgBlockList.add(id);
-        if (msgBlockList.size()>15){
+        if (msgBlockList.size() > 15) {
             msgBlockList.remove(0);
             msgBlockList.remove(0);
         }
         return false;
     }
-
-
 }
