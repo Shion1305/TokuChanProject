@@ -2,7 +2,9 @@ package com.shion1305.ynu_discord.tokuchan;
 
 import discord4j.common.util.Snowflake;
 import discord4j.core.DiscordClient;
+import discord4j.core.DiscordClientBuilder;
 import discord4j.core.GatewayDiscordClient;
+import discord4j.core.event.domain.PresenceUpdateEvent;
 import discord4j.core.event.domain.interaction.ButtonInteractionEvent;
 import discord4j.core.event.domain.message.MessageCreateEvent;
 import discord4j.core.object.component.ActionRow;
@@ -10,9 +12,12 @@ import discord4j.core.object.component.Button;
 import discord4j.core.object.entity.Message;
 import discord4j.core.object.entity.channel.Channel;
 import discord4j.core.object.entity.channel.MessageChannel;
+import discord4j.core.object.presence.Presence;
 import discord4j.core.spec.EmbedCreateSpec;
+import discord4j.discordjson.json.ActivityUpdateRequest;
 import discord4j.discordjson.json.MessageCreateRequest;
 import discord4j.discordjson.json.MessageData;
+import discord4j.discordjson.json.gateway.StatusUpdate;
 import discord4j.rest.util.Color;
 import org.reactivestreams.Subscriber;
 import org.reactivestreams.Subscription;
@@ -23,6 +28,7 @@ import javax.servlet.annotation.WebListener;
 import java.time.Instant;
 import java.util.*;
 import java.util.logging.Logger;
+import java.util.prefs.Preferences;
 
 @WebListener
 public class TokuChanHandler implements ServletContextListener {
@@ -39,8 +45,8 @@ public class TokuChanHandler implements ServletContextListener {
 
     public TokuChanHandler() {
         logger = Logger.getLogger("YNU-DISCORD=ANONYMOUS");
-        token = "OTAwODQzMDc2OTUwNTg1MzQ0.YXHNfg.XN7tCyebPiWyoIBHUUZ4QaYTq7c";
-        client = DiscordClient.create(token).login().block();
+        token = System.getenv("TokuChanDiscordToken");
+        client = DiscordClient.create(token).gateway().setInitialPresence(s -> Presence.online(ActivityUpdateRequest.builder().type(0).name("!introで使い方を確認! メッセージはDMで送信してね!").url("https://cdn.discordapp.com/avatars/898900972426915850/4b09f00b8b78094e931641a85077bcc3.png?size=512").build())).login().block();
         channel = Objects.requireNonNull(client).getChannelById(Snowflake.of(targetChannel)).block();
         data = new HashMap<>();
         msgBlockList = new ArrayList<>();
@@ -77,9 +83,9 @@ public class TokuChanHandler implements ServletContextListener {
                                 MessageChannel channel = Objects.requireNonNull(event.getMessage().getChannel().block());
                                 if (event.getMessage().getContent().length() > 200) {
                                     msgOverloadNotify(channel);
-                                }else if (event.getMessage().getContent().length()==0){
+                                } else if (event.getMessage().getContent().length() == 0) {
                                     msgIllegalNotify(channel);
-                                } else{
+                                } else {
                                     if (event.getMessage().getContent().length() != 0 || !event.getMessage().getAttachments().isEmpty()) {
                                         logger.info(event.getMessage().toString());
                                         msgConfirm(event.getMessage(), channel);
@@ -241,6 +247,7 @@ public class TokuChanHandler implements ServletContextListener {
             });
         }).block();
     }
+
     private Message msgIllegalNotify(MessageChannel channel) {
         return channel.createMessage(messageCreateSpec -> {
             messageCreateSpec.addEmbed(embedCreateSpec -> {
