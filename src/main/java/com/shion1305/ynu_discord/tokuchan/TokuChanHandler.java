@@ -12,9 +12,7 @@ import discord4j.core.object.entity.channel.Channel;
 import discord4j.core.object.entity.channel.MessageChannel;
 import discord4j.core.object.presence.Presence;
 import discord4j.core.spec.EmbedCreateSpec;
-import discord4j.discordjson.json.ActivityUpdateRequest;
-import discord4j.discordjson.json.MessageCreateRequest;
-import discord4j.discordjson.json.MessageData;
+import discord4j.discordjson.json.*;
 import discord4j.rest.util.Color;
 import org.reactivestreams.Subscriber;
 import org.reactivestreams.Subscription;
@@ -45,6 +43,7 @@ public class TokuChanHandler implements ServletContextListener {
     Channel channel;
     //These colors chosen picked by... https://mokole.com/palette.html
     int[] colors = new int[]{0x000000, 0x2f4f4f, 0x556b3f, 0xa0522d, 0x191970, 0x006400, 0x8b0000, 0x808000, 0x778899, 0x3cb371, 0x20b2aa, 0x00008b, 0xdaa520, 0x7f007f, 0xb03060, 0xd2b48c, 0xff4500, 0xff8c00, 0x0000cd, 0x00ff00, 0xffffff, 0xdc143c, 0x00bfff, 0xa020f0, 0xf08080, 0xadff2f, 0xff7f50, 0xff00ff, 0xf0e68c, 0xffff54, 0x6495ed, 0xdda00dd, 0xb0e0e6, 0x7b68ee, 0xee82ee, 0x98fb98, 0x7fffd4, 0xfff69b4, 0xffffe0, 0xffc0cb};
+
     @Override
     public void contextInitialized(ServletContextEvent sce) {
         try {
@@ -195,20 +194,33 @@ public class TokuChanHandler implements ServletContextListener {
                                             messageCreateSpec.addEmbed(embedCreateSpec -> {
                                                 embedCreateSpec.setTitle("\"匿ちゃん\"へようこそ!!")
                                                         .setColor(Color.DISCORD_WHITE)
-                                                        .setImage("https://raw.githubusercontent.com/shion1305/TokuChanProject/master/src/main/webapp/TokuChanHTU2.2.png")
-                                                        .setDescription("やぁ!  匿名化BOTの匿ちゃんだよ!\n私にDMしてくれたら自動的に情報工の匿名チャンネルに転送するよ!\n送信取り消し機能もあるので気軽に使ってみてね!\n\nメッセージについているプロフィール色はそれぞれ各個人に割り当てられている色で、いつでもリセットすることが可能です!");
+                                                        .setDescription("やぁ!  匿名化BOTの匿ちゃんだよ!\n私にDMしてくれたら自動的に情報工の匿名チャンネルに転送するよ!\n送信取り消し機能もあるので気軽に使ってみてね!\n\nメッセージについているプロフィール色はそれぞれ各個人に割り当てられている色で、いつでもリセットすることが可能です!")
+                                                        .setImage("https://raw.githubusercontent.com/shion1305/TokuChanProject/master/src/main/webapp/TokuChanHTU2.2.png");
                                             });
                                         }).block();
+                                /*
+                                 * Memo for how to send file.
+                                 */
+//                                event.getMessage().getChannel().block().createMessage(messageCreateSpec -> {
+//                                    try {
+//                                        messageCreateSpec.addFile("TokuChanHTU2.2.png", new FileInputStream(System.getProperty("catalina.base")+"/webapps/TokuChan/TokuChanHTU2.2.png"));
+//                                    } catch (FileNotFoundException e) {
+//                                        logger.warning("FILE NOT FOUND");
+//                                        e.printStackTrace();
+//                                    }
+//                                }).block();
                             } catch (Exception e) {
+                                logger.warning("EXCEPTION OCCURRED ON !intro");
+                                logger.warning(e.getMessage());
                                 e.printStackTrace();
                             }
                         }
                 );
 
         client.on(MessageCreateEvent.class).filter(event -> event.getMessage().getContent().equals("!whatsnew")).subscribe(event -> {
-            try{
+            try {
                 msgWhatsNew(Objects.requireNonNull(event.getMessage().getChannel().block()));
-            }catch (Exception e){
+            } catch (Exception e) {
                 logger.warning("Error Occurred in !WhatsNew");
                 logger.warning(e.getMessage());
                 e.printStackTrace();
