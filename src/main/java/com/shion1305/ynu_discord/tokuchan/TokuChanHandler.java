@@ -21,6 +21,7 @@ import javax.servlet.ServletContextEvent;
 import javax.servlet.ServletContextListener;
 import javax.servlet.annotation.WebListener;
 import java.io.*;
+import java.nio.ByteBuffer;
 import java.time.Instant;
 import java.util.*;
 import java.util.logging.Logger;
@@ -38,6 +39,7 @@ public class TokuChanHandler implements ServletContextListener {
     String token;
     Logger logger;
     String preferenceLocation = "/TokuChanConfig/TokuChan.config";
+    String maintenanceInfoLocation = "/TokuChanConfig/TokuChanMaintenance.config";
     File preferenceFile;
     Preferences preferences;
     Channel channel;
@@ -62,8 +64,17 @@ public class TokuChanHandler implements ServletContextListener {
                 .setColor(Color.DISCORD_WHITE)
                 .setImage("https://media2.giphy.com/media/ocuQpTqeFlDOP4fFJI/giphy.gif")
                 .asRequest()).doOnSuccess(messageData -> {
-            preferences.putLong("MaintenanceMessageID", messageData.id().asLong());
+            ByteBuffer buffer = ByteBuffer.allocate(Long.BYTES);
+            buffer.putLong(messageData.id().asLong());
+            try {
+                new FileOutputStream(System.getProperty("user.home") + maintenanceInfoLocation).write(buffer.array());
+            } catch (IOException e) {
+                e.printStackTrace();
+            }
             saveConfig();
+            System.out.println("SYSTEM SHUTDOWN");
+            logger.info("SYSTEM SHUTDOWN");
+            System.exit(0);
         }).block();
         System.out.println("SYSTEM SHUTDOWN");
         logger.info("SYSTEM SHUTDOWN");
