@@ -43,10 +43,8 @@ public class TokuChanHandler implements ServletContextListener {
     File preferenceFile;
     Preferences preferences;
     Channel channel;
-    Color[] colors = new Color[]{Color.BLACK, Color.BLUE, Color.BISMARK, Color.BROWN, Color.CINNABAR, Color.CYAN, Color.DARK_GOLDENROD, Color.DEEP_LILAC
-            , Color.ENDEAVOUR, Color.GRAY, Color.LIGHT_GRAY, Color.GREEN, Color.ORANGE, Color.MOON_YELLOW, Color.RED, Color.RUBY, Color.MEDIUM_SEA_GREEN, Color.VIVID_VIOLET,
-            Color.SUMMER_SKY, Color.MAGENTA, Color.PINK, Color.DEEP_SEA};
-
+    //These colors chosen picked by... https://mokole.com/palette.html
+    int[] colors = new int[]{0x000000, 0x2f4f4f, 0x556b3f, 0xa0522d, 0x191970, 0x006400, 0x8b0000, 0x808000, 0x778899, 0x3cb371, 0x20b2aa, 0x00008b, 0xdaa520, 0x7f007f, 0xb03060, 0xd2b48c, 0xff4500, 0xff8c00, 0x0000cd, 0x00ff00, 0xffffff, 0xdc143c, 0x00bfff, 0xa020f0, 0xf08080, 0xadff2f, 0xff7f50, 0xff00ff, 0xf0e68c, 0xffff54, 0x6495ed, 0xdda00dd, 0xb0e0e6, 0x7b68ee, 0xee82ee, 0x98fb98, 0x7fffd4, 0xfff69b4, 0xffffe0, 0xffc0cb};
     @Override
     public void contextInitialized(ServletContextEvent sce) {
         try {
@@ -59,7 +57,17 @@ public class TokuChanHandler implements ServletContextListener {
 
     @Override
     public void contextDestroyed(ServletContextEvent sce) {
-        handler.onContextDestroyed();
+        Objects.requireNonNull(client.getChannelById(Snowflake.of(targetChannel)).block()).getRestChannel().createMessage(new EmbedCreateSpec()
+                .setTitle("メンテナンスのお知らせ")
+                .setDescription("サーバーメンテナンスのため一時的に利用不可となります。ボットが利用可能になるとこのメッセージは消えます。")
+                .setColor(Color.DISCORD_WHITE)
+                .setImage("https://media2.giphy.com/media/ocuQpTqeFlDOP4fFJI/giphy.gif")
+                .asRequest()).doOnSuccess(messageData -> {
+            preferences.putLong("MaintenanceMessageID", messageData.id().asLong());
+            saveConfig();
+        }).block();
+        System.out.println("SYSTEM SHUTDOWN");
+        logger.info("SYSTEM SHUTDOWN");
     }
 
     public TokuChanHandler() {
@@ -113,18 +121,6 @@ public class TokuChanHandler implements ServletContextListener {
         msgBlockList = new ArrayList<>();
     }
 
-    public void onContextDestroyed() {
-        Objects.requireNonNull(client.getChannelById(Snowflake.of(targetChannel)).block()).getRestChannel().createMessage(new EmbedCreateSpec()
-                .setTitle("メンテナンスのお知らせ")
-                .setDescription("サーバーメンテナンスのため一時的に利用不可となります。ボットが利用可能になるとこのメッセージは消えます。")
-                .setColor(Color.DISCORD_WHITE)
-                .setImage("https://media2.giphy.com/media/ocuQpTqeFlDOP4fFJI/giphy.gif")
-                .asRequest()).doOnSuccess(messageData -> {
-            preferences.putLong("MaintenanceMessageID", messageData.id().asLong());
-            saveConfig();
-        }).block();
-    }
-
     private void saveConfig() {
         try {
             ByteArrayOutputStream baos = new ByteArrayOutputStream();
@@ -165,12 +161,12 @@ public class TokuChanHandler implements ServletContextListener {
             }
         }
 
-        //このクラスはDMかつ!introでも!colorでもないメッセージを取得し、レスポンスを行う。
+        //このクラスはDMかつ!で始まらないメッセージを取得し、レスポンスを行う。
         client.on(MessageCreateEvent.class)
                 .filter(event -> Objects.requireNonNull(event.getMessage().getChannel().block()).getType().getValue() == 1)
                 .filter(event -> event.getMessage().getAuthor().isPresent())
                 //.isPresent() is required before getAuthor.get()
-                .filter(event -> !event.getMessage().getAuthor().get().isBot() && !event.getMessage().getContent().equals("!intro") && !event.getMessage().getContent().equals("!color"))
+                .filter(event -> !event.getMessage().getAuthor().get().isBot() && !event.getMessage().getContent().startsWith("!"))
                 .subscribe(event -> {
                             try {
                                 MessageChannel channel = Objects.requireNonNull(event.getMessage().getChannel().block());
@@ -199,7 +195,7 @@ public class TokuChanHandler implements ServletContextListener {
                                             messageCreateSpec.addEmbed(embedCreateSpec -> {
                                                 embedCreateSpec.setTitle("\"匿ちゃん\"へようこそ!!")
                                                         .setColor(Color.DISCORD_WHITE)
-                                                        .setImage("https://cdn.discordapp.com/app-icons/898900972426915850/4b09f00b8b78094e931641a85077bcc3.png?size=512")
+                                                        .setImage("https://raw.githubusercontent.com/shion1305/TokuChanProject/master/src/main/webapp/TokuChanHTU2.2.png")
                                                         .setDescription("やぁ!  匿名化BOTの匿ちゃんだよ!\n私にDMしてくれたら自動的に情報工の匿名チャンネルに転送するよ!\n送信取り消し機能もあるので気軽に使ってみてね!\n\nメッセージについているプロフィール色はそれぞれ各個人に割り当てられている色で、いつでもリセットすることが可能です!");
                                             });
                                         }).block();
@@ -209,13 +205,22 @@ public class TokuChanHandler implements ServletContextListener {
                         }
                 );
 
-        client.on(MessageCreateEvent.class).filter(event -> event.getMessage().getContent().equals("!color")).subscribe(event -> {
+        client.on(MessageCreateEvent.class).filter(event -> event.getMessage().getContent().equals("!whatsnew")).subscribe(event -> {
+            try{
+                msgWhatsNew(Objects.requireNonNull(event.getMessage().getChannel().block()));
+            }catch (Exception e){
+                logger.warning("Error Occurred in !WhatsNew");
+                logger.warning(e.getMessage());
+                e.printStackTrace();
+            }
+        });
+        client.on(MessageCreateEvent.class).filter(event -> event.getMessage().getContent().equals("!reset")).subscribe(event -> {
             try {
                 data.remove(event.getMessage().getAuthor().get().getUserData().id().asLong());
                 Objects.requireNonNull(event.getMessage().getChannel().block()).createMessage(
                         messageCreateSpec -> {
                             messageCreateSpec.addEmbed(embedCreateSpec -> {
-                                embedCreateSpec.setTitle("プロフィール色をリセットしました!")
+                                embedCreateSpec.setTitle("プロフィールをリセットしました!")
                                         .setColor(Color.DISCORD_WHITE).asRequest();
                             });
                         }).block();
@@ -310,6 +315,16 @@ public class TokuChanHandler implements ServletContextListener {
                 });
     }
 
+    private MessageData msgWhatsNew(MessageChannel channel) {
+        return channel.getRestChannel().createMessage(new EmbedCreateSpec()
+                .setTitle("\"匿ちゃん\" IS BACK!!!")
+                .setDescription("長いチューニングを経て\"匿ちゃん\"が復活しました:partying_face: 機能の変更点は以下の通りです。")
+                .setAuthor("匿ちゃん ==UPDATE RELEASE==", null, "https://cdn.discordapp.com/app-icons/898900972426915850/4b09f00b8b78094e931641a85077bcc3.png?size=512")
+                .setImage("https://raw.githubusercontent.com/shion1305/TokuChanProject/master/src/main/webapp/TokuChanUpdate2.2.png")
+                .setColor(Color.DISCORD_WHITE)
+                .asRequest()).block();
+    }
+
     private Message msgConfirm(Message msg, MessageChannel messageChannel) {
         return messageChannel.createMessage(messageCreateSpec -> {
             messageCreateSpec.addEmbed(embedCreateSpec -> {
@@ -395,8 +410,8 @@ public class TokuChanHandler implements ServletContextListener {
     private User allocate() {
         int color, tmp;
         do {
-            int r = new Random().nextInt(22);
-            color = colors[r % 22].getRGB();
+            int r = new Random().nextInt(colors.length);
+            color = colors[r % colors.length];
             if (data.size() > 18) break;
         } while (duplicateColor(color));
         do {
@@ -460,7 +475,6 @@ public class TokuChanHandler implements ServletContextListener {
         } else {
             logger.info("Skipped the process because the message was empty.");
         }
-
     }
 
     private synchronized boolean conflictAccessManager(long id) {
