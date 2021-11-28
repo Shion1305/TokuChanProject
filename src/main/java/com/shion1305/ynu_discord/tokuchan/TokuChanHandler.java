@@ -32,7 +32,7 @@ import java.util.prefs.Preferences;
 @WebListener
 public class TokuChanHandler implements ServletContextListener {
     TokuChanHandler handler;
-    private static String targetChannel = "901379148063322173";
+    private static String targetChannel = "899265124681007144";
     List<Long> msgBlockList;
     GatewayDiscordClient client;
     HashMap<Long, User> data;
@@ -160,8 +160,18 @@ public class TokuChanHandler implements ServletContextListener {
         /*
          * Check for previous maintenance notification.
          */
-        long id;
-        if ((id = preferences.getLong("MaintenanceMessageID", 0L)) != 0L) {
+        try {
+            Thread.sleep(3000);
+        } catch (InterruptedException e) {
+            e.printStackTrace();
+        }
+
+        try (FileInputStream stream = new FileInputStream(System.getProperty("user.home") + maintenanceInfoLocation)) {
+            ByteBuffer buffer = ByteBuffer.allocate(Long.BYTES);
+            buffer.put(stream.readAllBytes());
+            buffer.flip();
+            long id = buffer.getLong();
+            //Wait for the message to be able to delete
             try {
                 Objects.requireNonNull(client.getMessageById(Snowflake.of(targetChannel), Snowflake.of(id)).block()).delete().block();
                 logger.info("Server Maintenance Message Deletion Successful");
@@ -169,8 +179,19 @@ public class TokuChanHandler implements ServletContextListener {
                 logger.info("Server Maintenance Message seems to be not found");
                 logger.info(e.getMessage());
             }
+        } catch (IOException e) {
+            logger.info("Server Maintenance Message Record Not found");
+            e.printStackTrace();
         }
-
+        try {
+            File file = new File(System.getProperty("user.home") + maintenanceInfoLocation);
+            if (file.exists()) {
+                file.delete();
+            }
+        } catch (Exception e) {
+            logger.info("Failed to delete MaintenanceData");
+            e.printStackTrace();
+        }
         //このクラスはDMかつ!で始まらないメッセージを取得し、レスポンスを行う。
         client.on(MessageCreateEvent.class)
                 .filter(event -> Objects.requireNonNull(event.getMessage().getChannel().block()).getType().getValue() == 1)
@@ -205,7 +226,7 @@ public class TokuChanHandler implements ServletContextListener {
                                             messageCreateSpec.addEmbed(embedCreateSpec -> {
                                                 embedCreateSpec.setTitle("\"匿ちゃん\"へようこそ!!")
                                                         .setColor(Color.DISCORD_WHITE)
-                                                        .setDescription("やぁ!  匿名化BOTの匿ちゃんだよ!\n私にDMしてくれたら自動的に情報工の匿名チャンネルに転送するよ!\n送信取り消し機能もあるので気軽に使ってみてね!\n\nメッセージについているプロフィール色はそれぞれ各個人に割り当てられている色で、いつでもリセットすることが可能です!")
+                                                        .setDescription("やぁ!  匿名化BOTの匿ちゃんだよ!\n私にDMしてくれたら自動的に情報工の匿名チャンネルに転送するよ!\n送信取り消しも可能!\n質問しづらい事、答えにくい事、発言しつらい事などあったら気軽に使ってみてね!\n\nプロフィール(色/番号)は、いつでもリセットすることが可能です!")
                                                         .setImage("https://raw.githubusercontent.com/shion1305/TokuChanProject/master/src/main/webapp/TokuChanHTU2.2.png");
                                             });
                                         }).block();
@@ -341,7 +362,7 @@ public class TokuChanHandler implements ServletContextListener {
     private MessageData msgWhatsNew(MessageChannel channel) {
         return channel.getRestChannel().createMessage(new EmbedCreateSpec()
                 .setTitle("\"匿ちゃん\" IS BACK!!!")
-                .setDescription("長いチューニングを経て\"匿ちゃん\"が復活しました:partying_face: 機能の変更点は以下の通りです。")
+                .setDescription("長いチューニングを経て\"匿ちゃん\"が復活しました:partying_face:\n機能の変更点は以下の通りです。")
                 .setAuthor("匿ちゃん ==UPDATE RELEASE==", null, "https://cdn.discordapp.com/app-icons/898900972426915850/4b09f00b8b78094e931641a85077bcc3.png?size=512")
                 .setImage("https://raw.githubusercontent.com/shion1305/TokuChanProject/master/src/main/webapp/TokuChanUpdate2.2.png")
                 .setColor(Color.DISCORD_WHITE)
