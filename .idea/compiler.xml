@@ -3,4 +3,7 @@
   <component name="CompilerConfiguration">
     <bytecodeTargetLevel target="11" />
   </component>
+  <component name="JavacSettings">
+    <option name="ADDITIONAL_OPTIONS_STRING" value="-J-Dfile.encoding=UTF-8" />
+  </component>
 </project>

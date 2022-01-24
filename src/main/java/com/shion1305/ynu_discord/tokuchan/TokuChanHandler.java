@@ -1,7 +1,6 @@
 package com.shion1305.ynu_discord.tokuchan;
 
 import discord4j.common.util.Snowflake;
-import discord4j.core.DiscordClient;
 import discord4j.core.GatewayDiscordClient;
 import discord4j.core.event.domain.interaction.ButtonInteractionEvent;
 import discord4j.core.event.domain.message.MessageCreateEvent;
@@ -10,16 +9,13 @@ import discord4j.core.object.component.Button;
 import discord4j.core.object.entity.Message;
 import discord4j.core.object.entity.channel.Channel;
 import discord4j.core.object.entity.channel.MessageChannel;
-import discord4j.core.object.presence.Presence;
 import discord4j.core.spec.EmbedCreateSpec;
-import discord4j.discordjson.json.*;
+import discord4j.discordjson.json.MessageCreateRequest;
+import discord4j.discordjson.json.MessageData;
 import discord4j.rest.util.Color;
 import org.reactivestreams.Subscriber;
 import org.reactivestreams.Subscription;
 
-import javax.servlet.ServletContextEvent;
-import javax.servlet.ServletContextListener;
-import javax.servlet.annotation.WebListener;
 import java.io.*;
 import java.nio.ByteBuffer;
 import java.time.Instant;
@@ -29,59 +25,43 @@ import java.util.prefs.BackingStoreException;
 import java.util.prefs.InvalidPreferencesFormatException;
 import java.util.prefs.Preferences;
 
-@WebListener
-public class TokuChanHandler implements ServletContextListener {
-    TokuChanHandler handler;
-    private static String targetChannel = "899265124681007144";
-    List<Long> msgBlockList;
-    GatewayDiscordClient client;
-    HashMap<Long, User> data;
-    String token;
-    Logger logger;
-    String preferenceLocation = "/TokuChanConfig/TokuChan.config";
-    String maintenanceInfoLocation = "/TokuChanConfig/TokuChanMaintenance.config";
+public class TokuChanHandler {
+    private final List<Long> msgBlockList;
+    private final GatewayDiscordClient client;
+    private HashMap<Long, User> data;
+    private final long targetChannel;
+    private static final Logger logger = Logger.getLogger("TokuChanHandler");
+    private static final String preferenceLocation = "/TokuChanConfig/TokuChan.config";
+    private static final String maintenanceInfoLocation = "/TokuChanConfig/TokuChanMaintenance.config";
     File preferenceFile;
     Preferences preferences;
-    Channel channel;
+    private final Channel channel;
     //These colors chosen picked by... https://mokole.com/palette.html
     int[] colors = new int[]{0x000000, 0x2f4f4f, 0x556b3f, 0xa0522d, 0x191970, 0x006400, 0x8b0000, 0x808000, 0x778899, 0x3cb371, 0x20b2aa, 0x00008b, 0xdaa520, 0x7f007f, 0xb03060, 0xd2b48c, 0xff4500, 0xff8c00, 0x0000cd, 0x00ff00, 0xffffff, 0xdc143c, 0x00bfff, 0xa020f0, 0xf08080, 0xadff2f, 0xff7f50, 0xff00ff, 0xf0e68c, 0xffff54, 0x6495ed, 0xdda00dd, 0xb0e0e6, 0x7b68ee, 0xee82ee, 0x98fb98, 0x7fffd4, 0xfff69b4, 0xffffe0, 0xffc0cb};
 
-    @Override
-    public void contextInitialized(ServletContextEvent sce) {
-        try {
-            handler = new TokuChanHandler();
-            handler.run();
-        } catch (Exception e) {
-            e.printStackTrace();
-        }
-    }
-
-    @Override
-    public void contextDestroyed(ServletContextEvent sce) {
+    public void stop() {
         Objects.requireNonNull(client.getChannelById(Snowflake.of(targetChannel)).block()).getRestChannel().createMessage(new EmbedCreateSpec()
-                .setTitle("ÉÅÉìÉeÉiÉìÉXÇÃÇ®ímÇÁÇπ")
-                .setDescription("ÉTÅ[ÉoÅ[ÉÅÉìÉeÉiÉìÉXÇÃÇΩÇﬂàÍéûìIÇ…óòópïsâ¬Ç∆Ç»ÇËÇ‹Ç∑ÅBÉ{ÉbÉgÇ™óòópâ¬î\Ç…Ç»ÇÈÇ∆Ç±ÇÃÉÅÉbÉZÅ[ÉWÇÕè¡Ç¶Ç‹Ç∑ÅB")
+                .setTitle("„É°„É≥„ÉÜ„Éä„É≥„Çπ„ÅÆ„ÅäÁü•„Çâ„Åõ")
+                .setDescription("„Çµ„Éº„Éê„Éº„É°„É≥„ÉÜ„Éä„É≥„Çπ„ÅÆ„Åü„ÇÅ‰∏ÄÊôÇÁöÑ„Å´Âà©Áî®‰∏çÂèØ„Å®„Å™„Çä„Åæ„Åô„ÄÇ„Éú„ÉÉ„Éà„ÅåÂà©Áî®ÂèØËÉΩ„Å´„Å™„Çã„Å®„Åì„ÅÆ„É°„ÉÉ„Çª„Éº„Ç∏„ÅØÊ∂à„Åà„Åæ„Åô„ÄÇ")
                 .setColor(Color.DISCORD_WHITE)
                 .setImage("https://media2.giphy.com/media/ocuQpTqeFlDOP4fFJI/giphy.gif")
                 .asRequest()).doOnSuccess(messageData -> {
             ByteBuffer buffer = ByteBuffer.allocate(Long.BYTES);
             buffer.putLong(messageData.id().asLong());
-            try {
-                new FileOutputStream(System.getProperty("user.home") + maintenanceInfoLocation).write(buffer.array());
+            try (FileOutputStream stream = new FileOutputStream(System.getProperty("user.home") + maintenanceInfoLocation)) {
+                stream.write(buffer.array());
             } catch (IOException e) {
                 e.printStackTrace();
             }
             saveConfig();
-            System.out.println("SYSTEM SHUTDOWN");
             logger.info("SYSTEM SHUTDOWN");
             System.exit(0);
         }).block();
-        System.out.println("SYSTEM SHUTDOWN");
         logger.info("SYSTEM SHUTDOWN");
     }
 
-    public TokuChanHandler() {
-        logger = Logger.getLogger("YNU-DISCORD=ANONYMOUS");
+    public TokuChanHandler(String token, long targetChannel) {
+        this.targetChannel = targetChannel;
         logger.info("Initialization Started");
         String dir = System.getProperty("user.home");
         preferenceFile = new File(dir + preferenceLocation);
@@ -115,7 +95,6 @@ public class TokuChanHandler implements ServletContextListener {
             }
         }
         preferences = Preferences.userRoot();
-        preferences.put("Test", "Test");
         try {
             preferences.flush();
         } catch (BackingStoreException e) {
@@ -123,18 +102,14 @@ public class TokuChanHandler implements ServletContextListener {
             logger.warning(e.getMessage());
             e.printStackTrace();
         }
-        token = System.getenv("TokuChanDiscordToken");
-        logger.info("TOKEN: " + token);
-        client = DiscordClient.create(token).gateway().setInitialPresence(s -> Presence.online(ActivityUpdateRequest.builder().type(0).name("!introÇ≈égÇ¢ï˚ÇämîF! ÉÅÉbÉZÅ[ÉWÇÕDMÇ≈ëóêMÇµÇƒÇÀ!").url("https://cdn.discordapp.com/avatars/898900972426915850/4b09f00b8b78094e931641a85077bcc3.png?size=512").build())).login().block();
+        client = TokuChanDiscordManager.getClient(token);
         channel = Objects.requireNonNull(client).getChannelById(Snowflake.of(targetChannel)).block();
         data = new HashMap<>();
         msgBlockList = new ArrayList<>();
     }
 
     private void saveConfig() {
-        try {
-            ByteArrayOutputStream baos = new ByteArrayOutputStream();
-            ObjectOutputStream oos = new ObjectOutputStream(baos);
+        try (ByteArrayOutputStream baos = new ByteArrayOutputStream(); ObjectOutputStream oos = new ObjectOutputStream(baos)) {
             oos.writeObject(data);
             byte[] bytes = baos.toByteArray();
             preferences.putByteArray("UserData", bytes);
@@ -192,22 +167,22 @@ public class TokuChanHandler implements ServletContextListener {
             logger.info("Failed to delete MaintenanceData");
             e.printStackTrace();
         }
-        //Ç±ÇÃÉNÉâÉXÇÕDMÇ©Ç¬!Ç≈énÇ‹ÇÁÇ»Ç¢ÉÅÉbÉZÅ[ÉWÇéÊìæÇµÅAÉåÉXÉ|ÉìÉXÇçsÇ§ÅB
+        //„Åì„ÅÆ„ÇØ„É©„Çπ„ÅØDM„Åã„Å§!„ÅßÂßã„Åæ„Çâ„Å™„ÅÑ„É°„ÉÉ„Çª„Éº„Ç∏„ÇíÂèñÂæó„Åó„ÄÅ„É¨„Çπ„Éù„É≥„Çπ„ÇíË°å„ÅÜ„ÄÇ
         client.on(MessageCreateEvent.class)
                 .filter(event -> Objects.requireNonNull(event.getMessage().getChannel().block()).getType().getValue() == 1)
                 .filter(event -> event.getMessage().getAuthor().isPresent())
                 //.isPresent() is required before getAuthor.get()
                 .filter(event -> !event.getMessage().getAuthor().get().isBot() && !event.getMessage().getContent().startsWith("!"))
                 .subscribe(event -> {
+                    logger.info("MessageReceived");
                             try {
                                 MessageChannel channel = Objects.requireNonNull(event.getMessage().getChannel().block());
-                                if (event.getMessage().getContent().length() > 200) {
+                                if (event.getMessage().getContent().length() > 400) {
                                     msgOverloadNotify(channel);
                                 } else if (event.getMessage().getContent().length() == 0) {
                                     msgIllegalNotify(channel);
                                 } else {
                                     if (event.getMessage().getContent().length() != 0 || !event.getMessage().getAttachments().isEmpty()) {
-                                        logger.info(event.getMessage().toString());
                                         msgConfirm(event.getMessage(), channel);
                                     }
                                 }
@@ -224,9 +199,10 @@ public class TokuChanHandler implements ServletContextListener {
                                 Objects.requireNonNull(event.getMessage().getChannel().block()).createMessage(
                                         messageCreateSpec -> {
                                             messageCreateSpec.addEmbed(embedCreateSpec -> {
-                                                embedCreateSpec.setTitle("\"ìΩÇøÇ·ÇÒ\"Ç÷ÇÊÇ§Ç±Çª!!")
+                                                logger.info("!intro is triggered");
+                                                embedCreateSpec.setTitle("\"Âåø„Å°„ÇÉ„Çì\"„Å∏„Çà„ÅÜ„Åì„Åù!!")
                                                         .setColor(Color.DISCORD_WHITE)
-                                                        .setDescription("Ç‚Çü!  ìΩñºâªBOTÇÃìΩÇøÇ·ÇÒÇæÇÊ!\néÑÇ…DMÇµÇƒÇ≠ÇÍÇΩÇÁé©ìÆìIÇ…èÓïÒçHÇÃìΩñºÉ`ÉÉÉìÉlÉãÇ…ì]ëóÇ∑ÇÈÇÊ!\nëóêMéÊÇËè¡ÇµÇ‡â¬î\!\néøñ‚ÇµÇ√ÇÁÇ¢éñÅAìöÇ¶Ç…Ç≠Ç¢éñÅAî≠åæÇµÇ¬ÇÁÇ¢éñÇ»Ç«Ç†Ç¡ÇΩÇÁãCåyÇ…égÇ¡ÇƒÇ›ÇƒÇÀ!\n\nÉvÉçÉtÉBÅ[Éã(êF/î‘çÜ)ÇÕÅAÇ¢Ç¬Ç≈Ç‡ÉäÉZÉbÉgÇ∑ÇÈÇ±Ç∆Ç™â¬î\Ç≈Ç∑!")
+                                                        .setDescription("„ÇÑ„ÅÅ!  ÂåøÂêçÂåñBOT„ÅÆÂåø„Å°„ÇÉ„Çì„Å†„Çà!\nÁßÅ„Å´DM„Åó„Å¶„Åè„Çå„Åü„ÇâËá™ÂãïÁöÑ„Å´ÊÉÖÂ†±Â∑•„ÅÆÂåøÂêç„ÉÅ„É£„É≥„Éç„É´„Å´Ëª¢ÈÄÅ„Åô„Çã„Çà!\nÈÄÅ‰ø°Âèñ„ÇäÊ∂à„Åó„ÇÇÂèØËÉΩ!\nË≥™Âïè„Åó„Å•„Çâ„ÅÑ‰∫ã„ÄÅÁ≠î„Åà„Å´„Åè„ÅÑ‰∫ã„ÄÅÁô∫Ë®Ä„Åó„Å§„Çâ„ÅÑ‰∫ã„Å™„Å©„ÅÇ„Å£„Åü„ÇâÊ∞óËªΩ„Å´‰Ωø„Å£„Å¶„Åø„Å¶„Å≠!\n\n„Éó„É≠„Éï„Ç£„Éº„É´(Ëâ≤/Áï™Âè∑)„ÅØ„ÄÅ„ÅÑ„Å§„Åß„ÇÇ„É™„Çª„ÉÉ„Éà„Åô„Çã„Åì„Å®„ÅåÂèØËÉΩ„Åß„Åô!")
                                                         .setImage("https://raw.githubusercontent.com/shion1305/TokuChanProject/master/src/main/webapp/TokuChanHTU2.2.png");
                                             });
                                         }).block();
@@ -264,7 +240,7 @@ public class TokuChanHandler implements ServletContextListener {
                 Objects.requireNonNull(event.getMessage().getChannel().block()).createMessage(
                         messageCreateSpec -> {
                             messageCreateSpec.addEmbed(embedCreateSpec -> {
-                                embedCreateSpec.setTitle("ÉvÉçÉtÉBÅ[ÉãÇÉäÉZÉbÉgÇµÇ‹ÇµÇΩ!")
+                                embedCreateSpec.setTitle("„Éó„É≠„Éï„Ç£„Éº„É´„Çí„É™„Çª„ÉÉ„Éà„Åó„Åæ„Åó„Åü!")
                                         .setColor(Color.DISCORD_WHITE).asRequest();
                             });
                         }).block();
@@ -276,81 +252,20 @@ public class TokuChanHandler implements ServletContextListener {
                 .subscribe(event -> {
                     try {
                         if (conflictAccessManager(event.getMessage().getId().asLong())) return;
-                        logger.info("ButtonInteractionEvent Detected...");
                         String customId = event.getCustomId();
                         if (customId.equals("YES")) {
-                            logger.info("ButtonInteractionEvent \"YES\"");
                             handleInteractionYes(event);
                         } else if (customId.startsWith("NO")) {
-                            logger.info("ButtonInteractionEvent \"NO\"");
                             msgCancelDraft(Objects.requireNonNull(event.getMessage().getChannel().block()), event.getMessage().getTimestamp());
-                            event.getMessage().delete().subscribe(new Subscriber<Void>() {
-                                @Override
-                                public void onSubscribe(Subscription s) {
-
-                                }
-
-                                @Override
-                                public void onNext(Void unused) {
-
-                                }
-
-                                @Override
-                                public void onError(Throwable t) {
-                                    t.printStackTrace();
-                                }
-
-                                @Override
-                                public void onComplete() {
-
-                                }
-                            });
+                            event.getMessage().delete().subscribe();
                         } else if (customId.startsWith("wd-")) {
                             client.getMessageById(Snowflake.of(targetChannel), Snowflake.of(customId.substring(3)))
                                     .doOnError(Throwable::printStackTrace)
                                     .subscribe(message -> {
                                         String content = message.getEmbeds().get(0).getTitle().get();
-                                        message.delete().subscribe(new Subscriber<Void>() {
-                                            @Override
-                                            public void onSubscribe(Subscription s) {
-                                            }
-
-                                            @Override
-                                            public void onNext(Void unused) {
-                                            }
-
-                                            @Override
-                                            public void onError(Throwable t) {
-                                                t.printStackTrace();
-                                            }
-
-                                            @Override
-                                            public void onComplete() {
-
-                                            }
-                                        });
+                                        message.delete().subscribe();
                                         msgWithdrew(content, Objects.requireNonNull(event.getMessage().getChannel().block()));
-                                        event.getMessage().delete().subscribe(new Subscriber<Void>() {
-                                            @Override
-                                            public void onSubscribe(Subscription s) {
-
-                                            }
-
-                                            @Override
-                                            public void onNext(Void unused) {
-
-                                            }
-
-                                            @Override
-                                            public void onError(Throwable t) {
-                                                t.printStackTrace();
-                                            }
-
-                                            @Override
-                                            public void onComplete() {
-
-                                            }
-                                        });
+                                        event.getMessage().delete().subscribe();
                                     });
                         }
                     } catch (Exception e) {
@@ -359,11 +274,16 @@ public class TokuChanHandler implements ServletContextListener {
                 });
     }
 
+    private boolean seekMaintenanceMessage() {
+//        client.getRestClient().getChannelService().getMessages(targetChannel,)
+        return true;
+    }
+
     private MessageData msgWhatsNew(MessageChannel channel) {
         return channel.getRestChannel().createMessage(new EmbedCreateSpec()
-                .setTitle("\"ìΩÇøÇ·ÇÒ\" IS BACK!!!")
-                .setDescription("í∑Ç¢É`ÉÖÅ[ÉjÉìÉOÇåoÇƒ\"ìΩÇøÇ·ÇÒ\"Ç™ïúäàÇµÇ‹ÇµÇΩ:partying_face:\nã@î\ÇÃïœçXì_ÇÕà»â∫ÇÃí ÇËÇ≈Ç∑ÅB")
-                .setAuthor("ìΩÇøÇ·ÇÒ ==UPDATE RELEASE==", null, "https://cdn.discordapp.com/app-icons/898900972426915850/4b09f00b8b78094e931641a85077bcc3.png?size=512")
+                .setTitle("\"Âåø„Å°„ÇÉ„Çì\" IS BACK!!!")
+                .setDescription("Èï∑„ÅÑ„ÉÅ„É•„Éº„Éã„É≥„Ç∞„ÇíÁµå„Å¶\"Âåø„Å°„ÇÉ„Çì\"„ÅåÂæ©Ê¥ª„Åó„Åæ„Åó„Åü:partying_face:\nÊ©üËÉΩ„ÅÆÂ§âÊõ¥ÁÇπ„ÅØ‰ª•‰∏ã„ÅÆÈÄö„Çä„Åß„Åô„ÄÇ")
+                .setAuthor("Âåø„Å°„ÇÉ„Çì ==UPDATE RELEASE==", null, "https://cdn.discordapp.com/app-icons/898900972426915850/4b09f00b8b78094e931641a85077bcc3.png?size=512")
                 .setImage("https://raw.githubusercontent.com/shion1305/TokuChanProject/master/src/main/webapp/TokuChanUpdate2.2.png")
                 .setColor(Color.DISCORD_WHITE)
                 .asRequest()).block();
@@ -372,18 +292,18 @@ public class TokuChanHandler implements ServletContextListener {
     private Message msgConfirm(Message msg, MessageChannel messageChannel) {
         return messageChannel.createMessage(messageCreateSpec -> {
             messageCreateSpec.addEmbed(embedCreateSpec -> {
-                embedCreateSpec.setTitle("à»â∫ÇÃì‡óeÇ≈ìΩñºÉ`ÉÉÉìÉlÉãÇ…ìäçeÇµÇ‹Ç∑ÅBÇÊÇÎÇµÇ¢Ç≈Ç∑Ç©?")
+                embedCreateSpec.setTitle("‰ª•‰∏ã„ÅÆÂÜÖÂÆπ„ÅßÂåøÂêç„ÉÅ„É£„É≥„Éç„É´„Å´ÊäïÁ®ø„Åó„Åæ„Åô„ÄÇ„Çà„Çç„Åó„ÅÑ„Åß„Åô„Åã?")
                         .setDescription(msg.getContent())
                         .setColor(Color.DEEP_SEA);
             });
-            messageCreateSpec.setComponents(ActionRow.of(Button.success("YES", "ëóêM"), Button.danger("NO", "éÊÇËè¡Çµ")));
+            messageCreateSpec.setComponents(ActionRow.of(Button.success("YES", "ÈÄÅ‰ø°"), Button.danger("NO", "Âèñ„ÇäÊ∂à„Åó")));
         }).block();
     }
 
     private Message msgCancelDraft(MessageChannel messageChannel, Instant timestamp) {
         return messageChannel.createMessage(messageCreateSpec -> {
             messageCreateSpec.addEmbed(embedCreateSpec -> {
-                embedCreateSpec.setTitle("ëóêMÇéÊÇËè¡ÇµÇ‹ÇµÇΩ")
+                embedCreateSpec.setTitle("ÈÄÅ‰ø°„ÇíÂèñ„ÇäÊ∂à„Åó„Åæ„Åó„Åü")
                         .setColor(Color.DEEP_SEA)
                         .setTimestamp(timestamp).setColor(Color.RED);
             });
@@ -393,8 +313,8 @@ public class TokuChanHandler implements ServletContextListener {
     private Message msgOverloadNotify(MessageChannel channel) {
         return channel.createMessage(messageCreateSpec -> {
             messageCreateSpec.addEmbed(embedCreateSpec -> {
-                embedCreateSpec.setTitle("ï∂éöêîÉIÅ[ÉoÅ[")
-                        .setDescription("200ï∂éöà»ì‡Ç≈Ç®äËÇ¢ÇµÇ‹Ç∑ÅB").setColor(Color.RED);
+                embedCreateSpec.setTitle("ÊñáÂ≠óÊï∞„Ç™„Éº„Éê„Éº")
+                        .setDescription("400ÊñáÂ≠ó‰ª•ÂÜÖ„Åß„ÅäÈ°ò„ÅÑ„Åó„Åæ„Åô„ÄÇ").setColor(Color.RED);
             });
         }).block();
     }
@@ -402,8 +322,8 @@ public class TokuChanHandler implements ServletContextListener {
     private Message msgIllegalNotify(MessageChannel channel) {
         return channel.createMessage(messageCreateSpec -> {
             messageCreateSpec.addEmbed(embedCreateSpec -> {
-                embedCreateSpec.setTitle("ñ≥å¯Ç»ÉÅÉbÉZÅ[ÉW")
-                        .setDescription("âÊëúÅAìÆâÊÇ‚ìYïtÉtÉ@ÉCÉãÅAÇ‹ÇΩÇÕãÛÇÃÉÅÉbÉZÅ[ÉWÇÕëóêMÇ≈Ç´Ç‹ÇπÇÒÅB").setColor(Color.RED);
+                embedCreateSpec.setTitle("ÁÑ°Âäπ„Å™„É°„ÉÉ„Çª„Éº„Ç∏")
+                        .setDescription("ÁîªÂÉè„ÄÅÂãïÁîª„ÇÑÊ∑ª‰ªò„Éï„Ç°„Ç§„É´„ÄÅ„Åæ„Åü„ÅØÁ©∫„ÅÆ„É°„ÉÉ„Çª„Éº„Ç∏„ÅØÈÄÅ‰ø°„Åß„Åç„Åæ„Åõ„Çì„ÄÇ").setColor(Color.RED);
             });
         }).block();
     }
@@ -411,17 +331,17 @@ public class TokuChanHandler implements ServletContextListener {
     private Message msgSent(String content, MessageChannel channel, String mesID) {
         return channel.createMessage(messageCreateSpec -> {
             messageCreateSpec.addEmbed(embedCreateSpec -> {
-                embedCreateSpec.setTitle("ëóêMäÆóπÇµÇ‹ÇµÇΩ")
+                embedCreateSpec.setTitle("ÈÄÅ‰ø°ÂÆå‰∫Ü„Åó„Åæ„Åó„Åü")
                         .setDescription(content)
                         .setColor(Color.GREEN);
             });
-            messageCreateSpec.setComponents(ActionRow.of(Button.secondary("wd-" + mesID, "ëóêMéÊÇËè¡Çµ")));
+            messageCreateSpec.setComponents(ActionRow.of(Button.secondary("wd-" + mesID, "ÈÄÅ‰ø°Âèñ„ÇäÊ∂à„Åó")));
         }).block();
     }
 
     private MessageData msgWithdrew(String content, MessageChannel channel) {
         return channel.getRestChannel().createMessage(new EmbedCreateSpec()
-                .setTitle("ÉÅÉbÉZÅ[ÉWÇéÊÇËè¡ÇµÇ‹ÇµÇΩ")
+                .setTitle("„É°„ÉÉ„Çª„Éº„Ç∏„ÇíÂèñ„ÇäÊ∂à„Åó„Åæ„Åó„Åü")
                 .setDescription(content)
                 .setColor(Color.BLUE).asRequest()).block();
     }
@@ -468,18 +388,15 @@ public class TokuChanHandler implements ServletContextListener {
     private void handleInteractionYes(ButtonInteractionEvent event) {
         long userID = event.getInteraction().getUser().getId().asLong();
         User user = getData(userID);
-        logger.info("ButtonInteractionEvent \"YES\"");
-        String message = "";
         /*
         Media posting function is not implemented for now.
          */
 //        String imgUrl = "";
         if (event.getMessage().getEmbeds().get(0).getDescription().isPresent()) {
-            message = event.getMessage().getEmbeds().get(0).getDescription().get();
+            String message = event.getMessage().getEmbeds().get(0).getDescription().get();
 //            if (event.getMessage().getEmbeds().get(0).getImage().isPresent()) {
 //                imgUrl = event.getMessage().getEmbeds().get(0).getImage().get().getUrl();
 //            }
-            String finalMessage = message;
             channel.getRestChannel().createMessage(
                             MessageCreateRequest.builder()
                                     .embed(new EmbedCreateSpec()
@@ -489,33 +406,13 @@ public class TokuChanHandler implements ServletContextListener {
                                             .asRequest())
                                     .build())
                     .doOnSuccess(messageData -> {
-                        msgSent(finalMessage, Objects.requireNonNull(event.getMessage().getChannel().block()), messageData.id().asString());
+                        msgSent(message, Objects.requireNonNull(event.getMessage().getChannel().block()), messageData.id().asString());
                     }).doOnError(throwable -> {
                         logger.warning("ERROR");
                         logger.warning(throwable.getMessage());
                     })
                     .block();
-            event.getMessage().delete().subscribe(new Subscriber<Void>() {
-                @Override
-                public void onSubscribe(Subscription s) {
-
-                }
-
-                @Override
-                public void onNext(Void unused) {
-
-                }
-
-                @Override
-                public void onError(Throwable t) {
-                    t.printStackTrace();
-                }
-
-                @Override
-                public void onComplete() {
-
-                }
-            });
+            event.getMessage().delete().subscribe();
         } else {
             logger.info("Skipped the process because the message was empty.");
         }
