@@ -13,8 +13,6 @@ import discord4j.core.spec.EmbedCreateSpec;
 import discord4j.discordjson.json.MessageCreateRequest;
 import discord4j.discordjson.json.MessageData;
 import discord4j.rest.util.Color;
-import org.reactivestreams.Subscriber;
-import org.reactivestreams.Subscription;
 
 import java.io.*;
 import java.nio.ByteBuffer;
@@ -40,23 +38,27 @@ public class TokuChanHandler {
     int[] colors = new int[]{0x000000, 0x2f4f4f, 0x556b3f, 0xa0522d, 0x191970, 0x006400, 0x8b0000, 0x808000, 0x778899, 0x3cb371, 0x20b2aa, 0x00008b, 0xdaa520, 0x7f007f, 0xb03060, 0xd2b48c, 0xff4500, 0xff8c00, 0x0000cd, 0x00ff00, 0xffffff, 0xdc143c, 0x00bfff, 0xa020f0, 0xf08080, 0xadff2f, 0xff7f50, 0xff00ff, 0xf0e68c, 0xffff54, 0x6495ed, 0xdda00dd, 0xb0e0e6, 0x7b68ee, 0xee82ee, 0x98fb98, 0x7fffd4, 0xfff69b4, 0xffffe0, 0xffc0cb};
 
     public void stop() {
-        Objects.requireNonNull(client.getChannelById(Snowflake.of(targetChannel)).block()).getRestChannel().createMessage(new EmbedCreateSpec()
-                .setTitle("メンテナンスのお知らせ")
-                .setDescription("サーバーメンテナンスのため一時的に利用不可となります。ボットが利用可能になるとこのメッセージは消えます。")
-                .setColor(Color.DISCORD_WHITE)
-                .setImage("https://media2.giphy.com/media/ocuQpTqeFlDOP4fFJI/giphy.gif")
-                .asRequest()).doOnSuccess(messageData -> {
-            ByteBuffer buffer = ByteBuffer.allocate(Long.BYTES);
-            buffer.putLong(messageData.id().asLong());
-            try (FileOutputStream stream = new FileOutputStream(System.getProperty("user.home") + maintenanceInfoLocation)) {
-                stream.write(buffer.array());
-            } catch (IOException e) {
-                e.printStackTrace();
-            }
-            saveConfig();
-            logger.info("SYSTEM SHUTDOWN");
-            System.exit(0);
-        }).block();
+        Objects.requireNonNull(client.getChannelById(Snowflake.of(targetChannel)).block()).getRestChannel()
+                .createMessage(MessageCreateRequest.builder()
+                        .addEmbed(EmbedCreateSpec.builder()
+                                .title("メンテナンスのお知らせ")
+                                .description("サーバーメンテナンスのため一時的に利用不可となります。ボットが利用可能になるとこのメッセージは消えます。")
+                                .color(Color.DISCORD_WHITE)
+                                .image("https://media2.giphy.com/media/ocuQpTqeFlDOP4fFJI/giphy.gif")
+                                .build().asRequest())
+                        .build())
+                .doOnSuccess(messageData -> {
+                    ByteBuffer buffer = ByteBuffer.allocate(Long.BYTES);
+                    buffer.putLong(messageData.id().asLong());
+                    try (FileOutputStream stream = new FileOutputStream(System.getProperty("user.home") + maintenanceInfoLocation)) {
+                        stream.write(buffer.array());
+                    } catch (IOException e) {
+                        e.printStackTrace();
+                    }
+                    saveConfig();
+                    logger.info("SYSTEM SHUTDOWN");
+                    System.exit(0);
+                }).block();
         logger.info("SYSTEM SHUTDOWN");
     }
 
@@ -174,7 +176,7 @@ public class TokuChanHandler {
                 //.isPresent() is required before getAuthor.get()
                 .filter(event -> !event.getMessage().getAuthor().get().isBot() && !event.getMessage().getContent().startsWith("!"))
                 .subscribe(event -> {
-                    logger.info("MessageReceived");
+                            logger.info("MessageReceived");
                             try {
                                 MessageChannel channel = Objects.requireNonNull(event.getMessage().getChannel().block());
                                 if (event.getMessage().getContent().length() > 400) {
@@ -251,21 +253,21 @@ public class TokuChanHandler {
         client.on(ButtonInteractionEvent.class)
                 .subscribe(event -> {
                     try {
-                        if (conflictAccessManager(event.getMessage().getId().asLong())) return;
+                        if (conflictAccessManager(event.getMessage().get().getId().asLong())) return;
                         String customId = event.getCustomId();
                         if (customId.equals("YES")) {
                             handleInteractionYes(event);
                         } else if (customId.startsWith("NO")) {
-                            msgCancelDraft(Objects.requireNonNull(event.getMessage().getChannel().block()), event.getMessage().getTimestamp());
-                            event.getMessage().delete().subscribe();
+                            msgCancelDraft(Objects.requireNonNull(event.getMessage().get().getChannel().block()), event.getMessage().get().getTimestamp());
+                            event.getMessage().get().delete().subscribe();
                         } else if (customId.startsWith("wd-")) {
                             client.getMessageById(Snowflake.of(targetChannel), Snowflake.of(customId.substring(3)))
                                     .doOnError(Throwable::printStackTrace)
                                     .subscribe(message -> {
                                         String content = message.getEmbeds().get(0).getTitle().get();
                                         message.delete().subscribe();
-                                        msgWithdrew(content, Objects.requireNonNull(event.getMessage().getChannel().block()));
-                                        event.getMessage().delete().subscribe();
+                                        msgWithdrew(content, Objects.requireNonNull(event.getMessage().get().getChannel().block()));
+                                        event.getMessage().get().delete().subscribe();
                                     });
                         }
                     } catch (Exception e) {
@@ -280,13 +282,14 @@ public class TokuChanHandler {
     }
 
     private MessageData msgWhatsNew(MessageChannel channel) {
-        return channel.getRestChannel().createMessage(new EmbedCreateSpec()
-                .setTitle("\"匿ちゃん\" IS BACK!!!")
-                .setDescription("長いチューニングを経て\"匿ちゃん\"が復活しました:partying_face:\n機能の変更点は以下の通りです。")
-                .setAuthor("匿ちゃん ==UPDATE RELEASE==", null, "https://cdn.discordapp.com/app-icons/898900972426915850/4b09f00b8b78094e931641a85077bcc3.png?size=512")
-                .setImage("https://raw.githubusercontent.com/shion1305/TokuChanProject/master/src/main/webapp/TokuChanUpdate2.2.png")
-                .setColor(Color.DISCORD_WHITE)
-                .asRequest()).block();
+        return channel.getRestChannel().createMessage(
+                EmbedCreateSpec.builder()
+                        .title("\"匿ちゃん\" IS BACK!!!")
+                        .description("長いチューニングを経て\"匿ちゃん\"が復活しました:partying_face:\n機能の変更点は以下の通りです。")
+                        .author("匿ちゃん ==UPDATE RELEASE==", null, "https://cdn.discordapp.com/app-icons/898900972426915850/4b09f00b8b78094e931641a85077bcc3.png?size=512")
+                        .image("https://raw.githubusercontent.com/shion1305/TokuChanProject/master/src/main/webapp/TokuChanUpdate2.2.png")
+                        .color(Color.DISCORD_WHITE)
+                        .build().asRequest()).block();
     }
 
     private Message msgConfirm(Message msg, MessageChannel messageChannel) {
@@ -313,8 +316,7 @@ public class TokuChanHandler {
     private Message msgOverloadNotify(MessageChannel channel) {
         return channel.createMessage(messageCreateSpec -> {
             messageCreateSpec.addEmbed(embedCreateSpec -> {
-                embedCreateSpec.setTitle("文字数オーバー")
-                        .setDescription("400文字以内でお願いします。").setColor(Color.RED);
+                embedCreateSpec.setTitle("文字数オーバー").setDescription("400文字以内でお願いします。").setColor(Color.RED);
             });
         }).block();
     }
@@ -340,10 +342,12 @@ public class TokuChanHandler {
     }
 
     private MessageData msgWithdrew(String content, MessageChannel channel) {
-        return channel.getRestChannel().createMessage(new EmbedCreateSpec()
-                .setTitle("メッセージを取り消しました")
-                .setDescription(content)
-                .setColor(Color.BLUE).asRequest()).block();
+        return channel.getRestChannel().createMessage(
+                EmbedCreateSpec.builder()
+                        .title("メッセージを取り消しました")
+                        .description(content)
+                        .color(Color.BLUE)
+                        .build().asRequest()).block();
     }
 
     private User getData(long user) {
@@ -392,27 +396,27 @@ public class TokuChanHandler {
         Media posting function is not implemented for now.
          */
 //        String imgUrl = "";
-        if (event.getMessage().getEmbeds().get(0).getDescription().isPresent()) {
-            String message = event.getMessage().getEmbeds().get(0).getDescription().get();
+        if (event.getMessage().get().getEmbeds().get(0).getDescription().isPresent()) {
+            String message = event.getMessage().get().getEmbeds().get(0).getDescription().get();
 //            if (event.getMessage().getEmbeds().get(0).getImage().isPresent()) {
 //                imgUrl = event.getMessage().getEmbeds().get(0).getImage().get().getUrl();
 //            }
             channel.getRestChannel().createMessage(
                             MessageCreateRequest.builder()
-                                    .embed(new EmbedCreateSpec()
-                                            .setTitle(message)
-                                            .setColor(Color.of(user.color))
-                                            .setDescription(" #" + user.tmp)
-                                            .asRequest())
-                                    .build())
-                    .doOnSuccess(messageData -> {
-                        msgSent(message, Objects.requireNonNull(event.getMessage().getChannel().block()), messageData.id().asString());
+                                    .embed(EmbedCreateSpec.builder()
+                                            .title(message)
+                                            .color(Color.of(user.color))
+                                            .description(" #" + user.tmp)
+                                            .build().asRequest())
+                                    .build()
+                    ).doOnSuccess(messageData -> {
+                        msgSent(message, Objects.requireNonNull(event.getMessage().get().getChannel().block()), messageData.id().asString());
                     }).doOnError(throwable -> {
                         logger.warning("ERROR");
                         logger.warning(throwable.getMessage());
                     })
                     .block();
-            event.getMessage().delete().subscribe();
+            event.getMessage().get().delete().subscribe();
         } else {
             logger.info("Skipped the process because the message was empty.");
         }
