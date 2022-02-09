@@ -18,7 +18,14 @@ Bot用のアカウントキーを登録して、Botアカウントにメッセ�
 
 他サーバー用に他人もすぐ使えるような設計にはしてありますが、ドキュメントは作成していない状態です。今後一般向けに使えるようにするかもしれないです
 
+導入は簡単にできるので、もし導入してみたい方がいらっしゃったら気軽に連絡してください!
+
 ## 更新情報
 
 ![](https://github.com/shion1305/TokuChanProject/blob/master/src/main/webapp/TokuChanUpdate2.2.png?raw=true)
 
+##レポジトリ主
+
+shion1305#gmail.com
+
+(#を@に変更)
