@@ -1,4 +1,4 @@
-package com.shion1305.ynu_discord.tokuchan;
+package com.shion1305.discord.tokuchan;
 
 import discord4j.common.util.Snowflake;
 import discord4j.core.GatewayDiscordClient;
@@ -24,18 +24,36 @@ import java.util.prefs.InvalidPreferencesFormatException;
 import java.util.prefs.Preferences;
 
 public class TokuChanHandler {
-    private final List<Long> msgBlockList;
-    private final GatewayDiscordClient client;
-    private HashMap<Long, User> data;
-    private final long targetChannel;
+    /**
+     * CAUTION
+     * UPDATE OF CONFIGURATION FILE IS REQUIRED BEFORE UPGRADING TO THIS VERSION
+     */
+
+    //Loggerの設定
     private static final Logger logger = Logger.getLogger("TokuChanHandler");
-    private static final String preferenceLocation = "/TokuChanConfig/TokuChan.config";
-    private static final String maintenanceInfoLocation = "/TokuChanConfig/TokuChanMaintenance.config";
+    //匿ちゃん情報ファイルの場所の設定(絶対パス)
+    private static final String preferenceLocation = ConfigManager.getConfig("PreferenceFileLocation");
+    private static final String maintenanceInfoLocation = ConfigManager.getConfig("MaintenanceFileLocation");
+
+    //conflictAccessManagerで使用
+    private final List<Long> msgBlockList;
+    //クライエントを保管する
+    private final GatewayDiscordClient client;
+    //プロフィール色などのユーザー情報を保持する
+    private HashMap<Long, User> data;
+
+    //対象のチャンネルID
+    private final long targetChannel;
     File preferenceFile;
     Preferences preferences;
     private final Channel channel;
+    //プロフィール色の候補
     //These colors chosen picked by... https://mokole.com/palette.html
     int[] colors = new int[]{0x000000, 0x2f4f4f, 0x556b3f, 0xa0522d, 0x191970, 0x006400, 0x8b0000, 0x808000, 0x778899, 0x3cb371, 0x20b2aa, 0x00008b, 0xdaa520, 0x7f007f, 0xb03060, 0xd2b48c, 0xff4500, 0xff8c00, 0x0000cd, 0x00ff00, 0xffffff, 0xdc143c, 0x00bfff, 0xa020f0, 0xf08080, 0xadff2f, 0xff7f50, 0xff00ff, 0xf0e68c, 0xffff54, 0x6495ed, 0xdda00dd, 0xb0e0e6, 0x7b68ee, 0xee82ee, 0x98fb98, 0x7fffd4, 0xfff69b4, 0xffffe0, 0xffc0cb};
+
+    /**
+     * このHandlerを終了するための関数
+     */
 
     public void stop() {
         Objects.requireNonNull(client.getChannelById(Snowflake.of(targetChannel)).block()).getRestChannel()
@@ -63,9 +81,10 @@ public class TokuChanHandler {
     }
 
     public TokuChanHandler(String token, long targetChannel) {
+        logger.info("TokuChanHandler Started with " + targetChannel);
         this.targetChannel = targetChannel;
-        logger.info("Initialization Started");
         String dir = System.getProperty("user.home");
+        //preference fileの設定
         preferenceFile = new File(dir + preferenceLocation);
         logger.info("PREFERENCE FILE: " + preferenceFile.getAbsolutePath());
         if (preferenceFile.exists()) {
@@ -110,6 +129,9 @@ public class TokuChanHandler {
         msgBlockList = new ArrayList<>();
     }
 
+    /**
+     * データを保存するための関数
+     */
     private void saveConfig() {
         try (ByteArrayOutputStream baos = new ByteArrayOutputStream(); ObjectOutputStream oos = new ObjectOutputStream(baos)) {
             oos.writeObject(data);
@@ -276,11 +298,21 @@ public class TokuChanHandler {
                 });
     }
 
+    /**
+     * 過去にサーバーのメンテナンスメッセージを送信したかを確認する関数
+     * *****工事中******
+     * @return
+     */
     private boolean seekMaintenanceMessage() {
 //        client.getRestClient().getChannelService().getMessages(targetChannel,)
         return true;
     }
 
+    /**
+     * !whatsnewに対し、更新情報を返すための関数
+     * @param channel channel from which the command came
+     * @return
+     */
     private MessageData msgWhatsNew(MessageChannel channel) {
         return channel.getRestChannel().createMessage(
                 EmbedCreateSpec.builder()
@@ -292,6 +324,12 @@ public class TokuChanHandler {
                         .build().asRequest()).block();
     }
 
+    /**
+     * 来たDMに対して確認メッセージを投稿するための関数
+     * @param msg receivedMessage
+     * @param messageChannel the channel from which it came
+     * @return
+     */
     private Message msgConfirm(Message msg, MessageChannel messageChannel) {
         return messageChannel.createMessage(messageCreateSpec -> {
             messageCreateSpec.addEmbed(embedCreateSpec -> {
@@ -303,6 +341,14 @@ public class TokuChanHandler {
         }).block();
     }
 
+    /**
+     * 送信確認メッセージに対して「取り消し」で発生した
+     * ButtonInteractionEvent
+     * を処理する関数。
+     * @param messageChannel channel from which the message came
+     * @param timestamp timestamp for the message
+     * @return
+     */
     private Message msgCancelDraft(MessageChannel messageChannel, Instant timestamp) {
         return messageChannel.createMessage(messageCreateSpec -> {
             messageCreateSpec.addEmbed(embedCreateSpec -> {
@@ -313,6 +359,13 @@ public class TokuChanHandler {
         }).block();
     }
 
+    /**
+     * 文字数が超過するとメッセージを受け取れない・送信できないことが判明したため
+     * バグを防ぐため、文字数を400文字で制限している。
+     * メッセージのインスタンスを返すための関数
+     * @param channel channel from which the message came
+     * @return prepared Message
+     */
     private Message msgOverloadNotify(MessageChannel channel) {
         return channel.createMessage(messageCreateSpec -> {
             messageCreateSpec.addEmbed(embedCreateSpec -> {
@@ -321,6 +374,12 @@ public class TokuChanHandler {
         }).block();
     }
 
+    /**
+     * 空のメッセージ、画像、動画や添付ファイルは受け付けていない。
+     * それを拒否するメッセージを送信し、そのインスタンスを返す関数
+     * @param channel
+     * @return
+     */
     private Message msgIllegalNotify(MessageChannel channel) {
         return channel.createMessage(messageCreateSpec -> {
             messageCreateSpec.addEmbed(embedCreateSpec -> {
@@ -350,6 +409,11 @@ public class TokuChanHandler {
                         .build().asRequest()).block();
     }
 
+    /**
+     * Userはcom.shion1305.ynu_discord.tokuchan.Userのこと
+     * @param user
+     * @return
+     */
     private User getData(long user) {
         User userD = data.get(user);
         if (userD == null) {
@@ -361,6 +425,11 @@ public class TokuChanHandler {
     }
 
 
+    /**
+     *
+     * @param color
+     * @return
+     */
     private boolean duplicateColor(int color) {
         for (User user : data.values()) {
             if (user.color == color) return true;
@@ -368,6 +437,11 @@ public class TokuChanHandler {
         return false;
     }
 
+    /**
+     *
+     * @param tmp
+     * @return
+     */
     private boolean duplicateTemp(int tmp) {
         for (User user : data.values()) {
             if (user.tmp == tmp) return true;
@@ -375,6 +449,11 @@ public class TokuChanHandler {
         return false;
     }
 
+    /**
+     * ユーザーに対し
+     * プロフィール色とプロフィール番号を付与する関数
+     * @return
+     */
     private User allocate() {
         int color, tmp;
         do {
@@ -388,7 +467,12 @@ public class TokuChanHandler {
         return new User(color, tmp);
     }
 
-
+    /**
+     * 送信確認メッセージに対して「送信する」が押されて発生した
+     * ButtonInteractionEvent
+     * を処理する関数。
+     * @param event received ButtonInteractionEvent
+     */
     private void handleInteractionYes(ButtonInteractionEvent event) {
         long userID = event.getInteraction().getUser().getId().asLong();
         User user = getData(userID);
@@ -422,6 +506,15 @@ public class TokuChanHandler {
         }
     }
 
+    /**
+     * ButtonInteractionEventの受け取り制御を行う
+     * 複数タップなどで1つのメッセージに対して複数のイベントが発生した時に
+     * 最初のメッセージのみを通し、後のメッセージを拒絶するための関数
+     *
+     * この関数では過去15件までのメッセージIDを記録し、制御する
+     * @param id messageID
+     * @return true if the messageID is already recorded
+     */
     private synchronized boolean conflictAccessManager(long id) {
         if (msgBlockList.contains(id)) return true;
         msgBlockList.add(id);
