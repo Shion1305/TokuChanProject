@@ -1,15 +1,12 @@
-package com.shion1305.ynu_discord.tokuchan;
+package com.shion1305.discord.tokuchan;
 
 import discord4j.core.DiscordClient;
 import discord4j.core.GatewayDiscordClient;
 import discord4j.core.object.presence.Activity;
 import discord4j.core.object.presence.ClientActivity;
 import discord4j.core.object.presence.ClientPresence;
-import discord4j.core.object.presence.Presence;
-import discord4j.discordjson.json.ActivityUpdateRequest;
 import discord4j.gateway.intent.IntentSet;
 
-import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.logging.Logger;
 

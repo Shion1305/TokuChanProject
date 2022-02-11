@@ -1,4 +1,4 @@
-package com.shion1305.ynu_discord.tokuchan;
+package com.shion1305.discord.tokuchan;
 
 import javax.servlet.ServletContextEvent;
 import javax.servlet.ServletContextListener;

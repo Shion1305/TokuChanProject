@@ -1,7 +1,6 @@
 ﻿/log.csv
 Decoder.java
 ActivityMonitor.java
-/.gradle/*
-/.idea/*
-/.build/*
 /build/
+/.gradle/
+/.idea/

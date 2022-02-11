@@ -1,8 +1,8 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <project version="4">
   <component name="Encoding" defaultCharsetForPropertiesFiles="UTF-8" addBOMForNewFiles="with BOM">
-    <file url="file://$PROJECT_DIR$/src/main/java/com/shion1305/ynu_discord/tokuchan/TokuChanDiscordManager.java" charset="UTF-8" />
-    <file url="file://$PROJECT_DIR$/src/main/java/com/shion1305/ynu_discord/tokuchan/TokuChanHandler.java" charset="UTF-8" />
+    <file url="file://$PROJECT_DIR$/src/main/java/com/shion1305/discord/tokuchan/TokuChanDiscordManager.java" charset="UTF-8" />
+    <file url="file://$PROJECT_DIR$/src/main/java/com/shion1305/discord/tokuchan/TokuChanHandler.java" charset="UTF-8" />
     <file url="PROJECT" charset="UTF-8" />
   </component>
 </project>

@@ -1,4 +1,4 @@
-package com.shion1305.ynu_discord.tokuchan;
+package com.shion1305.discord.tokuchan;
 
 import java.io.Serializable;
 
