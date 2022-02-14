@@ -238,7 +238,7 @@ public class TokuChanInstance {
                         if (customId.equals("YES")) {
                             handleInteractionYes(event);
                         } else if (customId.startsWith("NO")) {
-                            msgCancelDraft(Objects.requireNonNull(event.getMessage().get().getChannel().block()), event.getMessage().get().getTimestamp());
+                            handleMsgCancelDraft(event, event.getMessage().get().getTimestamp());
                             event.getMessage().get().delete().subscribe();
                         } else if (customId.startsWith("wd-")) {
                             client.getMessageById(Snowflake.of(targetChannelId), Snowflake.of(customId.substring(3)))
@@ -319,6 +319,15 @@ public class TokuChanInstance {
                         .setTimestamp(timestamp).setColor(Color.RED);
             });
         }).block();
+    }
+
+    private void handleMsgCancelDraft(ButtonInteractionEvent event, Instant timestamp) {
+        event.edit().withEmbeds(EmbedCreateSpec.builder()
+                        .title("送信を取り消しました")
+                        .color(Color.DEEP_SEA)
+                        .timestamp(timestamp)
+                        .build())
+                .block();
     }
 
     /**
