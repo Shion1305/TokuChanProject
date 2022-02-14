@@ -49,7 +49,7 @@ public class TokuChanInstance {
     //These colors chosen picked by... https://mokole.com/palette.html
     int[] colors = new int[]{0x000000, 0x2f4f4f, 0x556b3f, 0xa0522d, 0x191970, 0x006400, 0x8b0000, 0x808000, 0x778899, 0x3cb371, 0x20b2aa, 0x00008b, 0xdaa520, 0x7f007f, 0xb03060, 0xd2b48c, 0xff4500, 0xff8c00, 0x0000cd, 0x00ff00, 0xffffff, 0xdc143c, 0x00bfff, 0xa020f0, 0xf08080, 0xadff2f, 0xff7f50, 0xff00ff, 0xf0e68c, 0xffff54, 0x6495ed, 0xdda00dd, 0xb0e0e6, 0x7b68ee, 0xee82ee, 0x98fb98, 0x7fffd4, 0xfff69b4, 0xffffe0, 0xffc0cb};
 
-    /**
+    /*
      * このHandlerを終了するための関数
      */
 
@@ -250,7 +250,7 @@ public class TokuChanInstance {
                                     .subscribe(message -> {
                                         String content = message.getEmbeds().get(0).getTitle().get();
                                         message.delete().subscribe();
-                                        msgWithdrew(content, Objects.requireNonNull(event.getMessage().get().getChannel().block()));
+                                        handleMsgWithdrew(content, event);
                                         event.getMessage().get().delete().subscribe();
                                     });
                         }
@@ -368,6 +368,18 @@ public class TokuChanInstance {
         }).block();
     }
 
+    //ButtonInteractionEvent用に設計されたイベントリスポンス
+    private void handleMsgSent(String content, ButtonInteractionEvent event, String mesID) {
+        event.edit().withEmbeds(EmbedCreateSpec.builder()
+                        .title("送信完了しました")
+                        .description(content)
+                        .color(Color.GREEN)
+                        .build())
+                .withComponents(ActionRow.of(Button.secondary("wd-" + mesID, "送信取り消し")))
+                .block();
+    }
+
+
     private MessageData msgWithdrew(String content, MessageChannel channel) {
         return channel.getRestChannel().createMessage(
                 EmbedCreateSpec.builder()
@@ -375,6 +387,14 @@ public class TokuChanInstance {
                         .description(content)
                         .color(Color.BLUE)
                         .build().asRequest()).block();
+    }
+
+    private void handleMsgWithdrew(String content, ButtonInteractionEvent event) {
+        event.edit().withEmbeds(EmbedCreateSpec.builder()
+                .title("メッセージを取り消しました")
+                .description(content)
+                .color(Color.BLUE)
+                .build()).block();
     }
 
     /**
@@ -454,6 +474,7 @@ public class TokuChanInstance {
 //            if (event.getMessage().getEmbeds().get(0).getImage().isPresent()) {
 //                imgUrl = event.getMessage().getEmbeds().get(0).getImage().get().getUrl();
 //            }
+            //匿名チャンネルにメッセージを送信する。
             channel.getRestChannel().createMessage(
                             MessageCreateRequest.builder()
                                     .embed(EmbedCreateSpec.builder()
@@ -463,13 +484,14 @@ public class TokuChanInstance {
                                             .build().asRequest())
                                     .build()
                     ).doOnSuccess(messageData -> {
-                        msgSent(message, Objects.requireNonNull(event.getMessage().get().getChannel().block()), messageData.id().asString());
+                        //送信完了メッセージを出す
+                        //もしかしたらInteractionがタイムアウトする可能性も..?
+                        handleMsgSent(message, event, messageData.id().asString());
                     }).doOnError(throwable -> {
                         logger.warning("ERROR");
                         logger.warning(throwable.getMessage());
                     })
                     .block();
-            event.getMessage().get().delete().subscribe();
         } else {
             logger.info("Skipped the process because the message was empty.");
         }
