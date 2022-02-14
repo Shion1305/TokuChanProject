@@ -14,32 +14,23 @@ import discord4j.discordjson.json.MessageCreateRequest;
 import discord4j.discordjson.json.MessageData;
 import discord4j.rest.util.Color;
 
-import java.io.*;
-import java.nio.ByteBuffer;
 import java.time.Instant;
 import java.util.*;
 import java.util.logging.Logger;
-import java.util.prefs.Preferences;
 
 public class TokuChanInstance {
     /**
      * CAUTION
      * UPDATE OF CONFIGURATION FILE IS REQUIRED BEFORE UPGRADING TO THIS VERSION
      */
-
     //Loggerの設定
     private static final Logger logger = Logger.getLogger("TokuChanHandler");
-    //匿ちゃん情報ファイルの場所の設定(絶対パス)
-    private static final String preferenceLocation = ConfigManager.getConfig("PreferenceFileLocation");
-    private static final String maintenanceInfoLocation = ConfigManager.getConfig("MaintenanceFileLocation");
-
     //conflictAccessManagerで使用
     private final List<Long> msgBlockList;
     //クライエントを保管する
     private final GatewayDiscordClient client;
     //プロフィール色などのユーザー情報を保持する
     private HashMap<Long, User> data;
-
     //対象のチャンネルID
     private final long targetChannelId;
     private final long targetGuildId;
