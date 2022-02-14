@@ -54,6 +54,11 @@ public class TokuChanInstance {
      */
 
     public void stop() {
+//        sendMaintenanceNotification();
+        logger.info("SYSTEM SHUTDOWN");
+    }
+
+    private void sendMaintenanceNotification() {
         Objects.requireNonNull(client.getChannelById(Snowflake.of(targetChannel)).block()).getRestChannel()
                 .createMessage(MessageCreateRequest.builder()
                         .addEmbed(EmbedCreateSpec.builder()
@@ -75,60 +80,19 @@ public class TokuChanInstance {
                     logger.info("SYSTEM SHUTDOWN");
                     System.exit(0);
                 }).block();
-        logger.info("SYSTEM SHUTDOWN");
     }
 
-    public TokuChanHandler(String token, long targetChannel) {
+    public TokuChanInstance(String token, long targetChannel) {
         logger.info("TokuChanHandler Started with " + targetChannel);
         this.targetChannel = targetChannel;
-        String dir = System.getProperty("user.home");
-        //preference fileの設定
-        preferenceFile = new File(dir + preferenceLocation);
-        logger.info("PREFERENCE FILE: " + preferenceFile.getAbsolutePath());
-        if (preferenceFile.exists()) {
-            logger.info("PREFERENCE FILE FOUND");
-            try {
-                Preferences.importPreferences(new FileInputStream(preferenceFile));
-            } catch (IOException | InvalidPreferencesFormatException e) {
-                e.printStackTrace();
-            }
-        } else {
-            logger.warning("PREFERENCE FILE NOT FOUND");
-            try {
-                if (!preferenceFile.getParentFile().exists()) {
-                    if (preferenceFile.getParentFile().mkdir()) {
-                        logger.info("PREFERENCE FOLDER CREATED");
-                    } else {
-                        logger.info("FAILED TO CREATE PREFERENCE FOLDER");
-                    }
-                }
-                if (preferenceFile.createNewFile()) {
-                    logger.info("PREFERENCE FILE GENERATED!!");
-                } else {
-                    logger.warning("FAILED TO GENERATE PREFERENCE FILE");
-                }
-            } catch (IOException e) {
-                logger.warning("FAILED TO GENERATE PREFERENCE FILE WITH ERROR...");
-                logger.warning(e.getMessage());
-                e.printStackTrace();
-            }
-        }
         preferences = Preferences.userRoot();
-        try {
-            preferences.flush();
-        } catch (BackingStoreException e) {
-            logger.warning(e.toString());
-            logger.warning(e.getMessage());
-            e.printStackTrace();
-        }
         client = TokuChanDiscordManager.getClient(token);
         channel = Objects.requireNonNull(client).getChannelById(Snowflake.of(targetChannel)).block();
-        data = new HashMap<>();
         msgBlockList = new ArrayList<>();
     }
 
     /**
-     * データを保存するための関数
+     * ユーザープロフィールデータを保存するための関数
      */
     private void saveConfig() {
         try (ByteArrayOutputStream baos = new ByteArrayOutputStream(); ObjectOutputStream oos = new ObjectOutputStream(baos)) {
@@ -149,10 +113,9 @@ public class TokuChanInstance {
         /*
         Read User Data from preferences
          */
-        try (ObjectInputStream stream = new ObjectInputStream(new ByteArrayInputStream(preferences.getByteArray("UserData", null)))) {
-            data = (HashMap<Long, User>) stream.readObject();
-        } catch (Exception e) {
-            e.printStackTrace();
+        data = TokuChanPreferencesManager.readUserdata(targetChannel);
+        if (data == null) {
+            data = new HashMap<>();
         }
         /*
          * Check for previous maintenance notification.
@@ -163,32 +126,32 @@ public class TokuChanInstance {
             e.printStackTrace();
         }
 
-        try (FileInputStream stream = new FileInputStream(System.getProperty("user.home") + maintenanceInfoLocation)) {
-            ByteBuffer buffer = ByteBuffer.allocate(Long.BYTES);
-            buffer.put(stream.readAllBytes());
-            buffer.flip();
-            long id = buffer.getLong();
-            //Wait for the message to be able to delete
-            try {
-                Objects.requireNonNull(client.getMessageById(Snowflake.of(targetChannel), Snowflake.of(id)).block()).delete().block();
-                logger.info("Server Maintenance Message Deletion Successful");
-            } catch (Exception e) {
-                logger.info("Server Maintenance Message seems to be not found");
-                logger.info(e.getMessage());
-            }
-        } catch (IOException e) {
-            logger.info("Server Maintenance Message Record Not found");
-            e.printStackTrace();
-        }
-        try {
-            File file = new File(System.getProperty("user.home") + maintenanceInfoLocation);
-            if (file.exists()) {
-                file.delete();
-            }
-        } catch (Exception e) {
-            logger.info("Failed to delete MaintenanceData");
-            e.printStackTrace();
-        }
+//        try (FileInputStream stream = new FileInputStream(System.getProperty("user.home") + maintenanceInfoLocation)) {
+//            ByteBuffer buffer = ByteBuffer.allocate(Long.BYTES);
+//            buffer.put(stream.readAllBytes());
+//            buffer.flip();
+//            long id = buffer.getLong();
+//            //Wait for the message to be able to delete
+//            try {
+//                Objects.requireNonNull(client.getMessageById(Snowflake.of(targetChannel), Snowflake.of(id)).block()).delete().block();
+//                logger.info("Server Maintenance Message Deletion Successful");
+//            } catch (Exception e) {
+//                logger.info("Server Maintenance Message seems to be not found");
+//                logger.info(e.getMessage());
+//            }
+//        } catch (IOException e) {
+//            logger.info("Server Maintenance Message Record Not found");
+//            e.printStackTrace();
+//        }
+//        try {
+//            File file = new File(System.getProperty("user.home") + maintenanceInfoLocation);
+//            if (file.exists()) {
+//                file.delete();
+//            }
+//        } catch (Exception e) {
+//            logger.info("Failed to delete MaintenanceData");
+//            e.printStackTrace();
+//        }
         //このクラスはDMかつ!で始まらないメッセージを取得し、レスポンスを行う。
         client.on(MessageCreateEvent.class)
                 .filter(event -> Objects.requireNonNull(event.getMessage().getChannel().block()).getType().getValue() == 1)
