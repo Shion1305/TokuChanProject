@@ -12,11 +12,12 @@ public class TokuChanManager implements ServletContextListener {
     public void contextInitialized(ServletContextEvent sce) {
         //    private static long targetChannel = 860701593149374466L;
         //    private static String targetChannel = "899265124681007144";
-        long targetChannel = Long.parseLong(ConfigManager.getConfig("TargetChannel"));
+        long targetGuildId = Long.parseLong(ConfigManager.getConfig("TargetGuild"));
+        long targetChannelId = Long.parseLong(ConfigManager.getConfig("TargetChannel"));
         String token = ConfigManager.getConfig("DiscordToken");
 
         try {
-            instance = new TokuChanInstance(token, targetChannel);
+            instance = new TokuChanInstance(token, targetGuildId, targetChannelId);
             instance.run();
         } catch (Exception e) {
             e.printStackTrace();

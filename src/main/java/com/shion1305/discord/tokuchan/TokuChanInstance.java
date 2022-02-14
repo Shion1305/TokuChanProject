@@ -41,9 +41,8 @@ public class TokuChanInstance {
     private HashMap<Long, User> data;
 
     //対象のチャンネルID
-    private final long targetChannel;
-    File preferenceFile;
-    private Preferences preferences;
+    private final long targetChannelId;
+    private final long targetGuildId;
     private final Channel channel;
     //プロフィール色の候補
     //These colors chosen picked by... https://mokole.com/palette.html
@@ -82,12 +81,12 @@ public class TokuChanInstance {
                 }).block();
     }
 
-    public TokuChanInstance(String token, long targetChannel) {
-        logger.info("TokuChanHandler Started with " + targetChannel);
-        this.targetChannel = targetChannel;
-        preferences = Preferences.userRoot();
+    public TokuChanInstance(String token, long targetGuildId, long targetChannelId) {
+        logger.info("TokuChanHandler Started with " + targetChannelId);
+        this.targetChannelId = targetChannelId;
+        this.targetGuildId = targetGuildId;
         client = TokuChanDiscordManager.getClient(token);
-        channel = Objects.requireNonNull(client).getChannelById(Snowflake.of(targetChannel)).block();
+        channel = Objects.requireNonNull(client).getChannelById(Snowflake.of(targetChannelId)).block();
         msgBlockList = new ArrayList<>();
     }
 
@@ -95,7 +94,7 @@ public class TokuChanInstance {
      * ユーザープロフィールデータを保存するための関数
      */
     private void saveConfig() {
-        TokuChanPreferencesManager.saveData(targetChannel, data);
+        TokuChanPreferencesManager.saveData(targetChannelId, data);
     }
 
     /* 古いプロフィールデータを取得してマージする。
@@ -250,7 +249,7 @@ public class TokuChanInstance {
                             msgCancelDraft(Objects.requireNonNull(event.getMessage().get().getChannel().block()), event.getMessage().get().getTimestamp());
                             event.getMessage().get().delete().subscribe();
                         } else if (customId.startsWith("wd-")) {
-                            client.getMessageById(Snowflake.of(targetChannel), Snowflake.of(customId.substring(3)))
+                            client.getMessageById(Snowflake.of(targetChannelId), Snowflake.of(customId.substring(3)))
                                     .doOnError(Throwable::printStackTrace)
                                     .subscribe(message -> {
                                         String content = message.getEmbeds().get(0).getTitle().get();
@@ -498,7 +497,7 @@ public class TokuChanInstance {
                     })
                     .block();
         } else {
-            logger.info("Skipped the process because the message was empty.");
+            logger.info("Skipped as the process because the message was empty.");
         }
     }
 
