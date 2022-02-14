@@ -105,7 +105,9 @@ public class TokuChanInstance {
         HashMap<Long, User> oldData = TokuChanPreferencesManager.importOldData();
         if (oldData != null) {
             for (Map.Entry<Long, User> d : oldData.entrySet()) {
-
+                if (!data.containsKey(d.getKey())) {
+                    data.put(d.getKey(), d.getValue());
+                }
             }
         }
     }
@@ -114,7 +116,9 @@ public class TokuChanInstance {
         /*
         Read User Data from preferences
          */
-        data = TokuChanPreferencesManager.readUserdata(targetChannel);
+        data = TokuChanPreferencesManager.readUserdata(targetGuildId);
+        //Temporary Line for Upgrade
+        mergeData();
         if (data == null) {
             data = new HashMap<>();
         }
@@ -220,6 +224,7 @@ public class TokuChanInstance {
                 e.printStackTrace();
             }
         });
+
         client.on(MessageCreateEvent.class).filter(event -> event.getMessage().getContent().equals("!reset")).subscribe(event -> {
             try {
                 data.remove(event.getMessage().getAuthor().get().getUserData().id().asLong());
