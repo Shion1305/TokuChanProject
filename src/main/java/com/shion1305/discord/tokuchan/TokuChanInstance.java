@@ -49,7 +49,7 @@ public class TokuChanInstance {
     int[] colors = new int[]{0x000000, 0x2f4f4f, 0x556b3f, 0xa0522d, 0x191970, 0x006400, 0x8b0000, 0x808000, 0x778899, 0x3cb371, 0x20b2aa, 0x00008b, 0xdaa520, 0x7f007f, 0xb03060, 0xd2b48c, 0xff4500, 0xff8c00, 0x0000cd, 0x00ff00, 0xffffff, 0xdc143c, 0x00bfff, 0xa020f0, 0xf08080, 0xadff2f, 0xff7f50, 0xff00ff, 0xf0e68c, 0xffff54, 0x6495ed, 0xdda00dd, 0xb0e0e6, 0x7b68ee, 0xee82ee, 0x98fb98, 0x7fffd4, 0xfff69b4, 0xffffe0, 0xffc0cb};
 
     /*
-     * このHandlerを終了するための関数
+     * Instance終了時の関数
      */
 
     public void stop() {
@@ -57,29 +57,29 @@ public class TokuChanInstance {
         logger.info("SYSTEM SHUTDOWN");
     }
 
-    private void sendMaintenanceNotification() {
-        Objects.requireNonNull(client.getChannelById(Snowflake.of(targetChannel)).block()).getRestChannel()
-                .createMessage(MessageCreateRequest.builder()
-                        .addEmbed(EmbedCreateSpec.builder()
-                                .title("メンテナンスのお知らせ")
-                                .description("サーバーメンテナンスのため一時的に利用不可となります。ボットが利用可能になるとこのメッセージは消えます。")
-                                .color(Color.DISCORD_WHITE)
-                                .image("https://media2.giphy.com/media/ocuQpTqeFlDOP4fFJI/giphy.gif")
-                                .build().asRequest())
-                        .build())
-                .doOnSuccess(messageData -> {
-                    ByteBuffer buffer = ByteBuffer.allocate(Long.BYTES);
-                    buffer.putLong(messageData.id().asLong());
-                    try (FileOutputStream stream = new FileOutputStream(System.getProperty("user.home") + maintenanceInfoLocation)) {
-                        stream.write(buffer.array());
-                    } catch (IOException e) {
-                        e.printStackTrace();
-                    }
-                    saveConfig();
-                    logger.info("SYSTEM SHUTDOWN");
-                    System.exit(0);
-                }).block();
-    }
+//    private void sendMaintenanceNotification() {
+//        Objects.requireNonNull(client.getChannelById(Snowflake.of(targetChannelId)).block()).getRestChannel()
+//                .createMessage(MessageCreateRequest.builder()
+//                        .addEmbed(EmbedCreateSpec.builder()
+//                                .title("メンテナンスのお知らせ")
+//                                .description("サーバーメンテナンスのため一時的に利用不可となります。ボットが利用可能になるとこのメッセージは消えます。")
+//                                .color(Color.DISCORD_WHITE)
+//                                .image("https://media2.giphy.com/media/ocuQpTqeFlDOP4fFJI/giphy.gif")
+//                                .build().asRequest())
+//                        .build())
+//                .doOnSuccess(messageData -> {
+//                    ByteBuffer buffer = ByteBuffer.allocate(Long.BYTES);
+//                    buffer.putLong(messageData.id().asLong());
+//                    try (FileOutputStream stream = new FileOutputStream(System.getProperty("user.home") + maintenanceInfoLocation)) {
+//                        stream.write(buffer.array());
+//                    } catch (IOException e) {
+//                        e.printStackTrace();
+//                    }
+//                    saveConfig();
+//                    logger.info("SYSTEM SHUTDOWN");
+//                    System.exit(0);
+//                }).block();
+//    }
 
     public TokuChanInstance(String token, long targetGuildId, long targetChannelId) {
         logger.info("TokuChanHandler Started with " + targetChannelId);
