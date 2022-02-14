@@ -151,9 +151,7 @@ public class TokuChanInstance {
         //このクラスはDMかつ!で始まらないメッセージを取得し、レスポンスを行う。
         client.on(MessageCreateEvent.class)
                 .filter(event -> Objects.requireNonNull(event.getMessage().getChannel().block()).getType().getValue() == 1)
-                .filter(event -> event.getMessage().getAuthor().isPresent())
-                //.isPresent() is required before getAuthor.get()
-                .filter(event -> !event.getMessage().getAuthor().get().isBot() && !event.getMessage().getContent().startsWith("!"))
+                .filter(event -> event.getMessage().getAuthor().isPresent() && !event.getMessage().getAuthor().get().isBot() && !event.getMessage().getContent().startsWith("!"))
                 .subscribe(event -> {
                             logger.info("MessageReceived");
                             try {
@@ -213,6 +211,7 @@ public class TokuChanInstance {
 
         client.on(MessageCreateEvent.class).filter(event -> event.getMessage().getContent().equals("!reset")).subscribe(event -> {
             try {
+                if (event.getMessage().getAuthor().isEmpty()) return;
                 data.remove(event.getMessage().getAuthor().get().getUserData().id().asLong());
                 Objects.requireNonNull(event.getMessage().getChannel().block()).createMessage(
                         EmbedCreateSpec.builder().title("プロフィールをリセットしました!").color(Color.DISCORD_WHITE).build()).block();
@@ -223,7 +222,8 @@ public class TokuChanInstance {
         client.on(ButtonInteractionEvent.class)
                 .subscribe(event -> {
                     try {
-                        if (conflictAccessManager(event.getMessage().get().getId().asLong())) return;
+                        if (event.getMessage().isEmpty() || conflictAccessManager(event.getMessage().get().getId().asLong()))
+                            return;
                         String customId = event.getCustomId();
                         if (customId.equals("YES")) {
                             handleInteractionYes(event);
@@ -234,6 +234,7 @@ public class TokuChanInstance {
                             client.getMessageById(Snowflake.of(targetChannelId), Snowflake.of(customId.substring(3)))
                                     .doOnError(Throwable::printStackTrace)
                                     .subscribe(message -> {
+                                        if (message.getEmbeds().get(0).getTitle().isEmpty()) return;
                                         String content = message.getEmbeds().get(0).getTitle().get();
                                         message.delete().subscribe();
                                         handleMsgWithdrew(content, event);
@@ -454,7 +455,7 @@ public class TokuChanInstance {
         Media posting function is not implemented for now.
          */
 //        String imgUrl = "";
-        if (event.getMessage().get().getEmbeds().get(0).getDescription().isPresent()) {
+        if (event.getMessage().isPresent() && event.getMessage().get().getEmbeds().get(0).getDescription().isPresent()) {
             String message = event.getMessage().get().getEmbeds().get(0).getDescription().get();
 //            if (event.getMessage().getEmbeds().get(0).getImage().isPresent()) {
 //                imgUrl = event.getMessage().getEmbeds().get(0).getImage().get().getUrl();
