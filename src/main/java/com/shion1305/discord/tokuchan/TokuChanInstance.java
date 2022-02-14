@@ -95,17 +95,18 @@ public class TokuChanInstance {
      * ユーザープロフィールデータを保存するための関数
      */
     private void saveConfig() {
-        try (ByteArrayOutputStream baos = new ByteArrayOutputStream(); ObjectOutputStream oos = new ObjectOutputStream(baos)) {
-            oos.writeObject(data);
-            byte[] bytes = baos.toByteArray();
-            preferences.putByteArray("UserData", bytes);
-            preferences.exportSubtree(new FileOutputStream(preferenceFile));
-        } catch (Exception e) {
-            logger.warning("SAVE FAILED");
-            logger.warning(e.toString());
-            logger.warning(e.getLocalizedMessage());
-            logger.warning(e.getCause().getLocalizedMessage());
-            e.printStackTrace();
+        TokuChanPreferencesManager.saveData(targetChannel, data);
+    }
+
+    /* 古いプロフィールデータを取得してマージする。
+    新バージョンに移行するための一時的な関数
+     */
+    private void mergeData() {
+        HashMap<Long, User> oldData = TokuChanPreferencesManager.importOldData();
+        if (oldData != null) {
+            for (Map.Entry<Long, User> d : oldData.entrySet()) {
+
+            }
         }
     }
 
@@ -187,7 +188,7 @@ public class TokuChanInstance {
                                                 logger.info("!intro is triggered");
                                                 embedCreateSpec.setTitle("\"匿ちゃん\"へようこそ!!")
                                                         .setColor(Color.DISCORD_WHITE)
-                                                        .setDescription("やぁ!  匿名化BOTの匿ちゃんだよ!\n私にDMしてくれたら自動的に情報工の匿名チャンネルに転送するよ!\n送信取り消しも可能!\n質問しづらい事、答えにくい事、発言しつらい事などあったら気軽に使ってみてね!\n\nプロフィール(色/番号)は、いつでもリセットすることが可能です!")
+                                                        .setDescription("やぁ!  匿名化BOTの匿ちゃんだよ!\n私にDMしてくれたら自動的に匿名チャンネルに転送するよ!\n送信取り消しも可能!\n質問しづらい事、答えにくい事、発言しつらい事などあったら気軽に使ってみてね!\n\nプロフィール(色/番号)は、いつでもリセットすることが可能です!")
                                                         .setImage("https://raw.githubusercontent.com/shion1305/TokuChanProject/master/src/main/webapp/TokuChanHTU2.2.png");
                                             });
                                         }).block();
@@ -279,8 +280,8 @@ public class TokuChanInstance {
     private MessageData msgWhatsNew(MessageChannel channel) {
         return channel.getRestChannel().createMessage(
                 EmbedCreateSpec.builder()
-                        .title("\"匿ちゃん\" IS BACK!!!")
-                        .description("長いチューニングを経て\"匿ちゃん\"が復活しました:partying_face:\n機能の変更点は以下の通りです。")
+                        .title("匿ちゃん RELEASE NOTE")
+                        .description("匿ちゃんが新しくなりました!!!")
                         .author("匿ちゃん ==UPDATE RELEASE==", null, "https://cdn.discordapp.com/app-icons/898900972426915850/4b09f00b8b78094e931641a85077bcc3.png?size=512")
                         .image("https://raw.githubusercontent.com/shion1305/TokuChanProject/master/src/main/webapp/TokuChanUpdate2.2.png")
                         .color(Color.DISCORD_WHITE)
