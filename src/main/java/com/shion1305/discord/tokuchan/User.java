@@ -10,4 +10,12 @@ public class User implements Serializable {
         this.color = color;
         this.tmp = tmp;
     }
+
+    @Override
+    public String toString() {
+        return "User{" +
+                "color=" + color +
+                ", tmp=" + tmp +
+                '}';
+    }
 }

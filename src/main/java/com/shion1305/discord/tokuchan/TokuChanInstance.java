@@ -97,6 +97,7 @@ public class TokuChanInstance {
             for (Map.Entry<Long, User> d : oldData.entrySet()) {
                 if (!data.containsKey(d.getKey())) {
                     data.put(d.getKey(), d.getValue());
+                    logger.info("Merged Data: " + d.getKey() + "," + d.getValue());
                 }
             }
         }
@@ -339,6 +340,7 @@ public class TokuChanInstance {
     /**
      * 空のメッセージ、画像、動画や添付ファイルは受け付けていない。
      * それを拒否するメッセージを送信し、そのインスタンスを返す関数
+     * ButtonInteractionEvent用に設計されたイベントリスポンス
      *
      * @param channel channel from which the message came
      * @return
@@ -373,7 +375,6 @@ public class TokuChanInstance {
                 .withComponents(ActionRow.of(Button.secondary("wd-" + mesID, "送信取り消し")))
                 .block();
     }
-
 
     private MessageData msgWithdrew(String content, MessageChannel channel) {
         return channel.getRestChannel().createMessage(
