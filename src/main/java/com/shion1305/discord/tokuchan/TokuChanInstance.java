@@ -19,11 +19,9 @@ import java.nio.ByteBuffer;
 import java.time.Instant;
 import java.util.*;
 import java.util.logging.Logger;
-import java.util.prefs.BackingStoreException;
-import java.util.prefs.InvalidPreferencesFormatException;
 import java.util.prefs.Preferences;
 
-public class TokuChanHandler {
+public class TokuChanInstance {
     /**
      * CAUTION
      * UPDATE OF CONFIGURATION FILE IS REQUIRED BEFORE UPGRADING TO THIS VERSION
@@ -45,7 +43,7 @@ public class TokuChanHandler {
     //対象のチャンネルID
     private final long targetChannel;
     File preferenceFile;
-    Preferences preferences;
+    private Preferences preferences;
     private final Channel channel;
     //プロフィール色の候補
     //These colors chosen picked by... https://mokole.com/palette.html
@@ -301,6 +299,7 @@ public class TokuChanHandler {
     /**
      * 過去にサーバーのメンテナンスメッセージを送信したかを確認する関数
      * *****工事中******
+     *
      * @return
      */
     private boolean seekMaintenanceMessage() {
@@ -310,6 +309,7 @@ public class TokuChanHandler {
 
     /**
      * !whatsnewに対し、更新情報を返すための関数
+     *
      * @param channel channel from which the command came
      * @return
      */
@@ -326,7 +326,8 @@ public class TokuChanHandler {
 
     /**
      * 来たDMに対して確認メッセージを投稿するための関数
-     * @param msg receivedMessage
+     *
+     * @param msg            receivedMessage
      * @param messageChannel the channel from which it came
      * @return
      */
@@ -345,8 +346,9 @@ public class TokuChanHandler {
      * 送信確認メッセージに対して「取り消し」で発生した
      * ButtonInteractionEvent
      * を処理する関数。
+     *
      * @param messageChannel channel from which the message came
-     * @param timestamp timestamp for the message
+     * @param timestamp      timestamp for the message
      * @return
      */
     private Message msgCancelDraft(MessageChannel messageChannel, Instant timestamp) {
@@ -363,6 +365,7 @@ public class TokuChanHandler {
      * 文字数が超過するとメッセージを受け取れない・送信できないことが判明したため
      * バグを防ぐため、文字数を400文字で制限している。
      * メッセージのインスタンスを返すための関数
+     *
      * @param channel channel from which the message came
      * @return prepared Message
      */
@@ -377,7 +380,8 @@ public class TokuChanHandler {
     /**
      * 空のメッセージ、画像、動画や添付ファイルは受け付けていない。
      * それを拒否するメッセージを送信し、そのインスタンスを返す関数
-     * @param channel
+     *
+     * @param channel channel from which the message came
      * @return
      */
     private Message msgIllegalNotify(MessageChannel channel) {
@@ -411,6 +415,7 @@ public class TokuChanHandler {
 
     /**
      * Userはcom.shion1305.ynu_discord.tokuchan.Userのこと
+     *
      * @param user
      * @return
      */
@@ -426,7 +431,6 @@ public class TokuChanHandler {
 
 
     /**
-     *
      * @param color
      * @return
      */
@@ -438,7 +442,6 @@ public class TokuChanHandler {
     }
 
     /**
-     *
      * @param tmp
      * @return
      */
@@ -452,6 +455,7 @@ public class TokuChanHandler {
     /**
      * ユーザーに対し
      * プロフィール色とプロフィール番号を付与する関数
+     *
      * @return
      */
     private User allocate() {
@@ -471,6 +475,7 @@ public class TokuChanHandler {
      * 送信確認メッセージに対して「送信する」が押されて発生した
      * ButtonInteractionEvent
      * を処理する関数。
+     *
      * @param event received ButtonInteractionEvent
      */
     private void handleInteractionYes(ButtonInteractionEvent event) {
@@ -510,8 +515,8 @@ public class TokuChanHandler {
      * ButtonInteractionEventの受け取り制御を行う
      * 複数タップなどで1つのメッセージに対して複数のイベントが発生した時に
      * 最初のメッセージのみを通し、後のメッセージを拒絶するための関数
-     *
      * この関数では過去15件までのメッセージIDを記録し、制御する
+     *
      * @param id messageID
      * @return true if the messageID is already recorded
      */

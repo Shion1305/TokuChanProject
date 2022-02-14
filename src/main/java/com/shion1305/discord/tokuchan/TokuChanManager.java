@@ -6,7 +6,7 @@ import javax.servlet.annotation.WebListener;
 
 @WebListener
 public class TokuChanManager implements ServletContextListener {
-    TokuChanHandler handler;
+    TokuChanInstance instance;
 
     @Override
     public void contextInitialized(ServletContextEvent sce) {
@@ -16,8 +16,8 @@ public class TokuChanManager implements ServletContextListener {
         String token = ConfigManager.getConfig("DiscordToken");
 
         try {
-            handler = new TokuChanHandler(token, targetChannel);
-            handler.run();
+            instance = new TokuChanInstance(token, targetChannel);
+            instance.run();
         } catch (Exception e) {
             e.printStackTrace();
         }
@@ -25,6 +25,6 @@ public class TokuChanManager implements ServletContextListener {
 
     @Override
     public void contextDestroyed(ServletContextEvent sce) {
-        handler.stop();
+        instance.stop();
     }
 }
