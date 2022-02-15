@@ -12,21 +12,23 @@ class TokuChanPreferencesManager {
     /* Preferenceを占有的に管理するクラス
      */
     static {
-        prefs = Preferences.userRoot().node("TokuChanProject");
+        prefs = Preferences.userRoot().node("tokuchanproject");
     }
 
     static Preferences getInstancePreference(long groupId) {
-        return prefs.node("Instances").node(String.valueOf(groupId));
+        return prefs.node("instances").node(String.valueOf(groupId));
     }
 
     static HashMap<Long, User> readUserdata(long groupId) {
-        byte[] bData = getInstancePreference(groupId).getByteArray("UserData", null);
+        byte[] bData = getInstancePreference(groupId).getByteArray("userdata", null);
         if (bData != null) {
             try (ObjectInputStream stream = new ObjectInputStream(new ByteArrayInputStream(bData))) {
                 return (HashMap<Long, User>) stream.readObject();
             } catch (Exception e) {
                 e.printStackTrace();
             }
+        }else {
+            logger.info("NO USER_Data_Found");
         }
         return new HashMap<>();
     }
@@ -34,7 +36,7 @@ class TokuChanPreferencesManager {
     static HashMap<Long, User> importOldData() {
         byte[] data = Preferences.userRoot().getByteArray("UserData", null);
         if (data == null) return null;
-        try (ObjectInputStream stream = new ObjectInputStream(new ByteArrayInputStream(Preferences.userRoot().getByteArray("UserData", null)))) {
+        try (ObjectInputStream stream = new ObjectInputStream(new ByteArrayInputStream(data))) {
             return (HashMap<Long, User>) stream.readObject();
         } catch (IOException | ClassNotFoundException e) {
             e.printStackTrace();
@@ -47,7 +49,7 @@ class TokuChanPreferencesManager {
             oos.writeObject(data);
             byte[] bytes = baos.toByteArray();
             Preferences preferences = getInstancePreference(groupId);
-            preferences.putByteArray("UserData", bytes);
+            preferences.putByteArray("userdata", bytes);
             preferences.flush();
         } catch (Exception e) {
             logger.warning("SAVE FAILED");
