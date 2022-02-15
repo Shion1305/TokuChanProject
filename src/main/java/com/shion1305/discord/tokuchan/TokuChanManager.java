@@ -1,31 +1,47 @@
 package com.shion1305.discord.tokuchan;
 
+import com.fasterxml.jackson.databind.ObjectMapper;
+
 import javax.servlet.ServletContextEvent;
 import javax.servlet.ServletContextListener;
 import javax.servlet.annotation.WebListener;
+import java.io.File;
+import java.io.IOException;
+import java.util.ArrayList;
+import java.util.List;
+import java.util.logging.Logger;
 
 @WebListener
 public class TokuChanManager implements ServletContextListener {
-    TokuChanInstance instance;
+    private static final List<TokuChanInstance> instances = new ArrayList<>();
+    private final static Logger logger = Logger.getLogger(TokuChanManager.class.getName());
 
     @Override
     public void contextInitialized(ServletContextEvent sce) {
-        //    private static long targetChannel = 860701593149374466L;
-        //    private static String targetChannel = "899265124681007144";
-        long targetGuildId = Long.parseLong(ConfigManager.getConfig("TargetGuild"));
-        long targetChannelId = Long.parseLong(ConfigManager.getConfig("TargetChannel"));
-        String token = ConfigManager.getConfig("DiscordToken");
-
         try {
-            instance = new TokuChanInstance(token, targetGuildId, targetChannelId);
-            instance.run();
-        } catch (Exception e) {
+
+            ObjectMapper mapper = new ObjectMapper();
+            logger.info(ConfigManager.getConfig("TokuChanConfigJson"));
+            TokuChanData data = mapper.readValue(new File(ConfigManager.getConfig("TokuChanConfigJson")), TokuChanData.class);
+            if (data == null)
+                logger.severe("JsonConfig\"" + ConfigManager.getConfig("TokuChanConfigJson") + "\" is not loaded properly");
+            for (InstanceData instanceData : data.getInstances()) {
+                TokuChanInstance instance = new TokuChanInstance(instanceData.discordToken, instanceData.targetGuildId, instanceData.targetChannelId);
+                instance.run();
+                instances.add(instance);
+            }
+        } catch (IOException e) {
+            logger.severe("ERROR OCCURRED DURING LOADING JSON_CONFIG");
             e.printStackTrace();
         }
     }
 
     @Override
     public void contextDestroyed(ServletContextEvent sce) {
-        instance.stop();
+        for (TokuChanInstance i : instances) {
+            i.stop();
+        }
     }
 }
+
+

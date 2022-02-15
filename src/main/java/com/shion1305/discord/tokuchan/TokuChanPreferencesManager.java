@@ -1,4 +1,4 @@
-﻿package com.shion1305.discord.tokuchan;
+package com.shion1305.discord.tokuchan;
 
 import java.io.*;
 import java.util.HashMap;
@@ -32,6 +32,8 @@ class TokuChanPreferencesManager {
     }
 
     static HashMap<Long, User> importOldData() {
+        byte[] data = Preferences.userRoot().getByteArray("UserData", null);
+        if (data == null) return null;
         try (ObjectInputStream stream = new ObjectInputStream(new ByteArrayInputStream(Preferences.userRoot().getByteArray("UserData", null)))) {
             return (HashMap<Long, User>) stream.readObject();
         } catch (IOException | ClassNotFoundException e) {

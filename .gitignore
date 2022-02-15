@@ -6,3 +6,4 @@ ActivityMonitor.java
 /.gradle/
 /.idea/
 IssueAndObjectives.md
+/configuration.json

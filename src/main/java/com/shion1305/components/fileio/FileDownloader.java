@@ -9,29 +9,31 @@ import java.net.URL;
 
 public class FileDownloader {
     URL source;
+
     public FileDownloader(String url) throws MalformedURLException {
-        source=new URL(url);
+        source = new URL(url);
     }
-    public FileDownloader(URL url){
-        source=url;
+
+    public FileDownloader(URL url) {
+        source = url;
     }
+
     public byte[] doTask() throws IOException {
-        HttpURLConnection connection=((HttpURLConnection) source.openConnection());
+        HttpURLConnection connection = ((HttpURLConnection) source.openConnection());
         connection.setRequestMethod("GET");
         connection.setDoOutput(false);
         connection.setDoInput(true);
         connection.setRequestProperty("Accept-Language", "en");
         connection.connect();
-        InputStream stream=connection.getInputStream();
+        InputStream stream = connection.getInputStream();
         byte[] b = new byte[4096];
         int readByte = 0;
-        ByteArrayOutputStream stream1=new ByteArrayOutputStream();
-        while(-1 != (readByte = stream.read(b))){
+        ByteArrayOutputStream stream1 = new ByteArrayOutputStream();
+        while (-1 != (readByte = stream.read(b))) {
             stream1.write(b, 0, readByte);
         }
         return stream1.toByteArray();
     }
-
 
 
 }

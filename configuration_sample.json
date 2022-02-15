@@ -1,0 +1,14 @@
+﻿{
+  "instances": [
+    {
+      "DiscordToken": "",
+      "targetGuildId": 123135255236435634636734747373,
+      "targetChannelId": 18941472934782395728957239
+    },
+    {
+      "DiscordToken": "",
+      "targetGuildId": 123135255236435634636734747373,
+      "targetChannelId": 18941472934782395728957239
+    }
+  ]
+}
