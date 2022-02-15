@@ -224,21 +224,26 @@ public class TokuChanInstance {
                             return;
                         }
                         String customId = event.getCustomId();
-                        if (customId.equals("YES")) {
+                        logger.info("CUSTOM_ID: " + customId);
+                        if (customId.equals("TokuChan-YES")) {
+                            logger.info("TokuChan-YES received");
                             handleInteractionYes(event);
-                        } else if (customId.startsWith("NO")) {
+                        } else if (customId.startsWith("TokuChan-NO")) {
+                            logger.info("TokuChan-NO received");
                             handleMsgCancelDraft(event, event.getMessage().get().getTimestamp());
                             event.getMessage().get().delete().subscribe();
                         } else if (customId.startsWith("wd-")) {
+                            logger.info("WD message received");
+                            handleMsgWithdrew(event);
                             client.getMessageById(Snowflake.of(targetChannelId), Snowflake.of(customId.substring(3)))
                                     .doOnError(Throwable::printStackTrace)
                                     .subscribe(message -> {
+                                        logger.info("WD-");
                                         if (message.getEmbeds().get(0).getTitle().isEmpty()) return;
-                                        String content = message.getEmbeds().get(0).getTitle().get();
                                         message.delete().subscribe();
-                                        handleMsgWithdrew(content, event);
-                                        event.getMessage().get().delete().subscribe();
                                     });
+                        } else {
+                            event.getMessage().get().delete().block();
                         }
                     } catch (Exception e) {
                         e.printStackTrace();
@@ -283,9 +288,10 @@ public class TokuChanInstance {
      */
     private Message msgConfirm(Message msg, MessageChannel messageChannel) {
         return messageChannel.createMessage(EmbedCreateSpec.builder()
-                .title("以下の内容で匿名チャンネルに投稿します。よろしいですか?")
-                .description(msg.getContent())
-                .color(Color.DEEP_SEA).build()).block();
+                        .title("以下の内容で匿名チャンネルに投稿します。よろしいですか?")
+                        .description(msg.getContent())
+                        .color(Color.DEEP_SEA).build())
+                .withComponents(ActionRow.of(Button.success("TokuChan-YES", "送信"), Button.danger("TokuChan-NO", "取り消し"))).block();
     }
 
     /**
@@ -374,12 +380,12 @@ public class TokuChanInstance {
                         .build().asRequest()).block();
     }
 
-    private void handleMsgWithdrew(String content, ButtonInteractionEvent event) {
+    private void handleMsgWithdrew(ButtonInteractionEvent event) {
         event.edit().withEmbeds(EmbedCreateSpec.builder()
-                .title("メッセージを取り消しました")
-                .description(content)
-                .color(Color.BLUE)
-                .build()).block();
+                        .title("メッセージを取り消しました")
+                        .color(Color.BLUE)
+                        .build())
+                .withComponents().subscribe();
     }
 
     /**
