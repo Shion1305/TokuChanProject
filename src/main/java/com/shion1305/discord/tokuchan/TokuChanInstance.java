@@ -25,8 +25,6 @@ public class TokuChanInstance {
      */
     //Loggerの設定
     private static final Logger logger = Logger.getLogger("TokuChanHandler");
-    //conflictAccessManagerで使用
-    private final List<Long> msgBlockList;
     //クライエントを保管する
     private final GatewayDiscordClient client;
     //プロフィール色などのユーザー情報を保持する
@@ -78,7 +76,6 @@ public class TokuChanInstance {
         this.targetGuildId = targetGuildId;
         client = TokuChanDiscordManager.getClient(token);
         channel = Objects.requireNonNull(client).getChannelById(Snowflake.of(targetChannelId)).block();
-        msgBlockList = new ArrayList<>();
     }
 
     /**
@@ -222,8 +219,10 @@ public class TokuChanInstance {
         client.on(ButtonInteractionEvent.class)
                 .subscribe(event -> {
                     try {
-                        if (event.getMessage().isEmpty() || conflictAccessManager(event.getMessage().get().getId().asLong()))
+                        if (event.getMessage().isEmpty()) {
+                            logger.info("Requested Message was empty");
                             return;
+                        }
                         String customId = event.getCustomId();
                         if (customId.equals("YES")) {
                             handleInteractionYes(event);
@@ -481,24 +480,5 @@ public class TokuChanInstance {
         } else {
             logger.info("Skipped as the process because the message was empty.");
         }
-    }
-
-    /**
-     * ButtonInteractionEventの受け取り制御を行う
-     * 複数タップなどで1つのメッセージに対して複数のイベントが発生した時に
-     * 最初のメッセージのみを通し、後のメッセージを拒絶するための関数
-     * この関数では過去15件までのメッセージIDを記録し、制御する
-     *
-     * @param id messageID
-     * @return true if the messageID is already recorded
-     */
-    private synchronized boolean conflictAccessManager(long id) {
-        if (msgBlockList.contains(id)) return true;
-        msgBlockList.add(id);
-        if (msgBlockList.size() > 15) {
-            msgBlockList.remove(0);
-            msgBlockList.remove(0);
-        }
-        return false;
     }
 }
