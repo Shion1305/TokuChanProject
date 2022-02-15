@@ -46,30 +46,6 @@ public class TokuChanInstance {
         logger.info("SYSTEM SHUTDOWN");
     }
 
-//    private void sendMaintenanceNotification() {
-//        Objects.requireNonNull(client.getChannelById(Snowflake.of(targetChannelId)).block()).getRestChannel()
-//                .createMessage(MessageCreateRequest.builder()
-//                        .addEmbed(EmbedCreateSpec.builder()
-//                                .title("メンテナンスのお知らせ")
-//                                .description("サーバーメンテナンスのため一時的に利用不可となります。ボットが利用可能になるとこのメッセージは消えます。")
-//                                .color(Color.DISCORD_WHITE)
-//                                .image("https://media2.giphy.com/media/ocuQpTqeFlDOP4fFJI/giphy.gif")
-//                                .build().asRequest())
-//                        .build())
-//                .doOnSuccess(messageData -> {
-//                    ByteBuffer buffer = ByteBuffer.allocate(Long.BYTES);
-//                    buffer.putLong(messageData.id().asLong());
-//                    try (FileOutputStream stream = new FileOutputStream(System.getProperty("user.home") + maintenanceInfoLocation)) {
-//                        stream.write(buffer.array());
-//                    } catch (IOException e) {
-//                        e.printStackTrace();
-//                    }
-//                    saveConfig();
-//                    logger.info("SYSTEM SHUTDOWN");
-//                    System.exit(0);
-//                }).block();
-//    }
-
     public TokuChanInstance(String token, long targetGuildId, long targetChannelId) {
         logger.info("TokuChanHandler Started with " + targetChannelId);
         this.targetChannelId = targetChannelId;
@@ -231,14 +207,12 @@ public class TokuChanInstance {
                         } else if (customId.startsWith("TokuChan-NO")) {
                             logger.info("TokuChan-NO received");
                             handleMsgCancelDraft(event, event.getMessage().get().getTimestamp());
-                            event.getMessage().get().delete().subscribe();
                         } else if (customId.startsWith("wd-")) {
                             logger.info("WD message received");
                             handleMsgWithdrew(event);
                             client.getMessageById(Snowflake.of(targetChannelId), Snowflake.of(customId.substring(3)))
                                     .doOnError(Throwable::printStackTrace)
                                     .subscribe(message -> {
-                                        logger.info("WD-");
                                         if (message.getEmbeds().get(0).getTitle().isEmpty()) return;
                                         message.delete().subscribe();
                                     });
@@ -316,6 +290,7 @@ public class TokuChanInstance {
                         .color(Color.DEEP_SEA)
                         .timestamp(timestamp)
                         .build())
+                .withComponents()
                 .block();
     }
 
