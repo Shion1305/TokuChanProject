@@ -27,7 +27,6 @@ public class TokuChanManager implements ServletContextListener {
                 logger.severe("JsonConfig\"" + ConfigManager.getConfig("TokuChanConfigJson") + "\" is not loaded properly");
             for (InstanceData instanceData : data.getInstances()) {
                 TokuChanInstance instance = new TokuChanInstance(instanceData.discordToken, instanceData.targetGuildId, instanceData.targetChannelId);
-                instance.run();
                 instances.add(instance);
             }
         } catch (IOException e) {

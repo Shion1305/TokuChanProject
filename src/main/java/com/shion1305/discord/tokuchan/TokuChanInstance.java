@@ -3,6 +3,7 @@ package com.shion1305.discord.tokuchan;
 import discord4j.common.util.Snowflake;
 import discord4j.core.GatewayDiscordClient;
 import discord4j.core.event.domain.interaction.ButtonInteractionEvent;
+import discord4j.core.event.domain.lifecycle.ReadyEvent;
 import discord4j.core.event.domain.message.MessageCreateEvent;
 import discord4j.core.object.component.ActionRow;
 import discord4j.core.object.component.Button;
@@ -15,7 +16,10 @@ import discord4j.discordjson.json.MessageData;
 import discord4j.rest.util.Color;
 
 import java.time.Instant;
-import java.util.*;
+import java.util.HashMap;
+import java.util.Map;
+import java.util.Objects;
+import java.util.Random;
 import java.util.logging.Logger;
 
 public class TokuChanInstance {
@@ -52,13 +56,27 @@ public class TokuChanInstance {
         this.targetGuildId = targetGuildId;
         client = TokuChanDiscordManager.getClient(token);
         channel = Objects.requireNonNull(client).getChannelById(Snowflake.of(targetChannelId)).block();
+        /*
+        Read User Data from preferences
+         */
+        data = TokuChanPreferencesManager.readUserdata(targetGuildId);
+        //Temporary Line for Upgrade
+        mergeData();
+        if (data == null) {
+            data = new HashMap<>();
+        }
+        client.on(ReadyEvent.class)
+                .subscribe(reconnectEvent -> {
+                    logger.info("CONNECT EVENT");
+                    this.run();
+                });
     }
 
     /**
      * ユーザープロフィールデータを保存するための関数
      */
     private void saveConfig() {
-        TokuChanPreferencesManager.saveData(targetChannelId, data);
+        TokuChanPreferencesManager.saveData(targetGuildId, data);
     }
 
     /* 古いプロフィールデータを取得してマージする。
@@ -76,51 +94,7 @@ public class TokuChanInstance {
         }
     }
 
-    public void run() {
-        /*
-        Read User Data from preferences
-         */
-        data = TokuChanPreferencesManager.readUserdata(targetGuildId);
-        //Temporary Line for Upgrade
-        mergeData();
-        if (data == null) {
-            data = new HashMap<>();
-        }
-        /*
-         * Check for previous maintenance notification.
-         */
-        try {
-            Thread.sleep(3000);
-        } catch (InterruptedException e) {
-            e.printStackTrace();
-        }
-
-//        try (FileInputStream stream = new FileInputStream(System.getProperty("user.home") + maintenanceInfoLocation)) {
-//            ByteBuffer buffer = ByteBuffer.allocate(Long.BYTES);
-//            buffer.put(stream.readAllBytes());
-//            buffer.flip();
-//            long id = buffer.getLong();
-//            //Wait for the message to be able to delete
-//            try {
-//                Objects.requireNonNull(client.getMessageById(Snowflake.of(targetChannel), Snowflake.of(id)).block()).delete().block();
-//                logger.info("Server Maintenance Message Deletion Successful");
-//            } catch (Exception e) {
-//                logger.info("Server Maintenance Message seems to be not found");
-//                logger.info(e.getMessage());
-//            }
-//        } catch (IOException e) {
-//            logger.info("Server Maintenance Message Record Not found");
-//            e.printStackTrace();
-//        }
-//        try {
-//            File file = new File(System.getProperty("user.home") + maintenanceInfoLocation);
-//            if (file.exists()) {
-//                file.delete();
-//            }
-//        } catch (Exception e) {
-//            logger.info("Failed to delete MaintenanceData");
-//            e.printStackTrace();
-//        }
+    private void run() {
         //このクラスはDMかつ!で始まらないメッセージを取得し、レスポンスを行う。
         client.on(MessageCreateEvent.class)
                 .filter(event -> Objects.requireNonNull(event.getMessage().getChannel().block()).getType().getValue() == 1)
