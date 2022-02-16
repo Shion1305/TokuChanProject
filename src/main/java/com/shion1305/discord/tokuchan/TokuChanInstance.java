@@ -125,7 +125,7 @@ public class TokuChanInstance {
                                 Objects.requireNonNull(event.getMessage().getChannel().block()).createMessage(
                                         EmbedCreateSpec.builder().title("\"匿ちゃん\"へようこそ!!").color(Color.DISCORD_WHITE)
                                                 .description("やぁ!  匿名化BOTの匿ちゃんだよ!\n私にDMしてくれたら自動的に匿名チャンネルに転送するよ!\n送信取り消しも可能!\n質問しづらい事、答えにくい事、発言しつらい事などあったら気軽に使ってみてね!\n\nプロフィール(色/番号)は、いつでもリセットすることが可能です!")
-                                                .image("https://raw.githubusercontent.com/shion1305/TokuChanProject/master/src/main/webapp/TokuChanHTU2.2.png").build()).block();
+                                                .image("https://raw.githubusercontent.com/shion1305/TokuChanProject/master/src/main/webapp/TokuChanHTU2.3.png").build()).block();
 
                                 /*
                                  * Memo for how to send file.
@@ -221,8 +221,7 @@ public class TokuChanInstance {
                 EmbedCreateSpec.builder()
                         .title("匿ちゃん RELEASE NOTE")
                         .description("匿ちゃんが新しくなりました!!!")
-                        .author("匿ちゃん ==UPDATE RELEASE==", null, "https://cdn.discordapp.com/app-icons/898900972426915850/4b09f00b8b78094e931641a85077bcc3.png?size=512")
-                        .image("https://raw.githubusercontent.com/shion1305/TokuChanProject/master/src/main/webapp/TokuChanUpdate2.2.png")
+                        .image("https://raw.githubusercontent.com/shion1305/TokuChanProject/master/src/main/webapp/TokuChanUpdate2.3.png")
                         .color(Color.DISCORD_WHITE)
                         .build().asRequest()).block();
     }
