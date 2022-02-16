@@ -14,6 +14,7 @@ import discord4j.core.spec.EmbedCreateSpec;
 import discord4j.discordjson.json.MessageCreateRequest;
 import discord4j.discordjson.json.MessageData;
 import discord4j.rest.util.Color;
+import reactor.core.Disposable;
 
 import java.time.Instant;
 import java.util.*;
@@ -33,13 +34,20 @@ public class TokuChanInstance {
     //プロフィール色の候補
     //These colors chosen picked by... https://mokole.com/palette.html
     int[] colors = new int[]{0x000000, 0x2f4f4f, 0x556b3f, 0xa0522d, 0x191970, 0x006400, 0x8b0000, 0x808000, 0x778899, 0x3cb371, 0x20b2aa, 0x00008b, 0xdaa520, 0x7f007f, 0xb03060, 0xd2b48c, 0xff4500, 0xff8c00, 0x0000cd, 0x00ff00, 0xffffff, 0xdc143c, 0x00bfff, 0xa020f0, 0xf08080, 0xadff2f, 0xff7f50, 0xff00ff, 0xf0e68c, 0xffff54, 0x6495ed, 0xdda00dd, 0xb0e0e6, 0x7b68ee, 0xee82ee, 0x98fb98, 0x7fffd4, 0xfff69b4, 0xffffe0, 0xffc0cb};
+    //holds process to manage properly
+    private final List<Disposable> processList = new ArrayList<>();
 
     /*
      * Instance終了時の関数
      */
     public void stop() {
-//        sendMaintenanceNotification();
-        logger.info("SYSTEM SHUTDOWN");
+        //KILL ALL THE PROCESS
+        logger.info("SYSTEM SHUTDOWN SEQUENCE STARTED");
+        for (Disposable d : processList) {
+            d.dispose();
+        }
+        processList.clear();
+        logger.info("SYSTEM SHUTDOWN SEQUENCE SUCCESSFULLY ENDED");
     }
 
     public TokuChanInstance(String token, long targetGuildId, long targetChannelId) {
@@ -56,6 +64,7 @@ public class TokuChanInstance {
         client.on(ReadyEvent.class)
                 .subscribe(reconnectEvent -> {
                     logger.info("CONNECT EVENT");
+                    if (!processList.isEmpty()) stop();
                     this.run();
                 });
     }
@@ -67,7 +76,7 @@ public class TokuChanInstance {
 
     private void run() {
         //このクラスはDMかつ!で始まらないメッセージを取得し、レスポンスを行う。
-        client.on(MessageCreateEvent.class)
+        processList.add(client.on(MessageCreateEvent.class)
                 .filter(event -> Objects.requireNonNull(event.getMessage().getChannel().block()).getType().getValue() == 1)
                 .filter(event -> event.getMessage().getAuthor().isPresent() && !event.getMessage().getAuthor().get().isBot() && !event.getMessage().getContent().startsWith("!"))
                 .subscribe(event -> {
@@ -87,9 +96,8 @@ public class TokuChanInstance {
                                 e.printStackTrace();
                             }
                         }
-                );
-
-        client.on(MessageCreateEvent.class)
+                ));
+        processList.add(client.on(MessageCreateEvent.class)
                 .filter(event -> event.getMessage().getContent().equals("!intro"))
                 .subscribe(event -> {
                             try {
@@ -115,9 +123,8 @@ public class TokuChanInstance {
                                 e.printStackTrace();
                             }
                         }
-                );
-
-        client.on(MessageCreateEvent.class).filter(event -> event.getMessage().getContent().equals("!whatsnew")).subscribe(event -> {
+                ));
+        processList.add(client.on(MessageCreateEvent.class).filter(event -> event.getMessage().getContent().equals("!whatsnew")).subscribe(event -> {
             try {
                 msgWhatsNew(Objects.requireNonNull(event.getMessage().getChannel().block()));
             } catch (Exception e) {
@@ -125,9 +132,8 @@ public class TokuChanInstance {
                 logger.warning(e.getMessage());
                 e.printStackTrace();
             }
-        });
-
-        client.on(MessageCreateEvent.class).filter(event -> event.getMessage().getContent().equals("!reset")).subscribe(event -> {
+        }));
+        processList.add(client.on(MessageCreateEvent.class).filter(event -> event.getMessage().getContent().equals("!reset")).subscribe(event -> {
             try {
                 if (event.getMessage().getAuthor().isEmpty()) return;
                 data.remove(event.getMessage().getAuthor().get().getUserData().id().asLong());
@@ -136,8 +142,9 @@ public class TokuChanInstance {
             } catch (Exception e) {
                 e.printStackTrace();
             }
-        });
-        client.on(ButtonInteractionEvent.class)
+        }));
+
+        processList.add(client.on(ButtonInteractionEvent.class)
                 .subscribe(event -> {
                     try {
                         if (event.getMessage().isEmpty()) {
@@ -167,7 +174,7 @@ public class TokuChanInstance {
                     } catch (Exception e) {
                         e.printStackTrace();
                     }
-                });
+                }));
     }
 
     /**
