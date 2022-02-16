@@ -27,17 +27,18 @@ class TokuChanPreferencesManager {
             } catch (Exception e) {
                 e.printStackTrace();
             }
-        }else {
+        } else {
             logger.info("NO USER_Data_Found");
         }
         return new HashMap<>();
     }
 
-    static HashMap<Long, User> importOldData() {
+    static HashMap<Long, com.shion1305.ynu_discord.tokuchan.User> importOldData() {
         byte[] data = Preferences.userRoot().getByteArray("UserData", null);
+        if (data!=null)logger.info("OLD DATA DETECTED");
         if (data == null) return null;
         try (ObjectInputStream stream = new ObjectInputStream(new ByteArrayInputStream(data))) {
-            return (HashMap<Long, User>) stream.readObject();
+            return (HashMap<Long, com.shion1305.ynu_discord.tokuchan.User>) stream.readObject();
         } catch (IOException | ClassNotFoundException e) {
             e.printStackTrace();
             return null;

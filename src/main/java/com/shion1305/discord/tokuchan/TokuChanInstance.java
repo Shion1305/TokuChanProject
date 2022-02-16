@@ -1,5 +1,6 @@
 package com.shion1305.discord.tokuchan;
 
+import com.shion1305.ynu_discord.tokuchan.UserConverter;
 import discord4j.common.util.Snowflake;
 import discord4j.core.GatewayDiscordClient;
 import discord4j.core.event.domain.interaction.ButtonInteractionEvent;
@@ -83,15 +84,20 @@ public class TokuChanInstance {
     新バージョンに移行するための一時的な関数
      */
     private void mergeData() {
-        HashMap<Long, User> oldData = TokuChanPreferencesManager.importOldData();
+        HashMap<Long, com.shion1305.ynu_discord.tokuchan.User> oldData = TokuChanPreferencesManager.importOldData();
         if (oldData != null) {
-            for (Map.Entry<Long, User> d : oldData.entrySet()) {
+            logger.info("OLD DATA FOUND");
+            for (Map.Entry<Long, com.shion1305.ynu_discord.tokuchan.User> d : oldData.entrySet()) {
                 if (!data.containsKey(d.getKey())) {
-                    data.put(d.getKey(), d.getValue());
-                    logger.info("Merged Data: " + d.getKey() + "," + d.getValue());
+                    User user = new User(UserConverter.getColor(d.getValue()), UserConverter.getTmp(d.getValue()));
+                    data.put(d.getKey(), user);
+                    logger.info("Merged Data: " + d.getKey() + "," + user);
                 }
             }
+        } else {
+            logger.info("OLD DATA NOT FOUND");
         }
+        saveConfig();
     }
 
     private void run() {
