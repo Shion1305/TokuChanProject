@@ -8,7 +8,7 @@ import java.util.logging.Logger;
 class ConfigManager {
     private static final Logger logger = Logger.getLogger("ConfigManager");
     private static Properties config;
-    private final static String configDir = System.getProperty("user.home") + "/TokuChanConfig/TokuChan.properties";
+    private final static String configDir = System.getProperty("user.home") + "/ShionServerConfig/TokuChanConfig/TokuChan.properties";
 
     static String getConfig(String field) {
         if (config == null) {
