@@ -33,18 +33,6 @@ class TokuChanPreferencesManager {
         return new HashMap<>();
     }
 
-    static HashMap<Long, com.shion1305.ynu_discord.tokuchan.User> importOldData() {
-        byte[] data = Preferences.userRoot().getByteArray("UserData", null);
-        if (data!=null)logger.info("OLD DATA DETECTED");
-        if (data == null) return null;
-        try (ObjectInputStream stream = new ObjectInputStream(new ByteArrayInputStream(data))) {
-            return (HashMap<Long, com.shion1305.ynu_discord.tokuchan.User>) stream.readObject();
-        } catch (IOException | ClassNotFoundException e) {
-            e.printStackTrace();
-            return null;
-        }
-    }
-
     static void saveData(long groupId, HashMap<Long, User> data) {
         try (ByteArrayOutputStream baos = new ByteArrayOutputStream(); ObjectOutputStream oos = new ObjectOutputStream(baos)) {
             oos.writeObject(data);

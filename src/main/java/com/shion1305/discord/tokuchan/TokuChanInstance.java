@@ -16,16 +16,10 @@ import discord4j.discordjson.json.MessageData;
 import discord4j.rest.util.Color;
 
 import java.time.Instant;
-import java.util.HashMap;
-import java.util.Objects;
-import java.util.Random;
+import java.util.*;
 import java.util.logging.Logger;
 
 public class TokuChanInstance {
-    /**
-     * CAUTION
-     * UPDATE OF CONFIGURATION FILE IS REQUIRED BEFORE UPGRADING TO THIS VERSION
-     */
     //Loggerの設定
     private static final Logger logger = Logger.getLogger("TokuChanHandler");
     //クライエントを保管する
@@ -43,7 +37,6 @@ public class TokuChanInstance {
     /*
      * Instance終了時の関数
      */
-
     public void stop() {
 //        sendMaintenanceNotification();
         logger.info("SYSTEM SHUTDOWN");
@@ -55,9 +48,7 @@ public class TokuChanInstance {
         this.targetGuildId = targetGuildId;
         client = TokuChanDiscordManager.getClient(token);
         channel = Objects.requireNonNull(client).getChannelById(Snowflake.of(targetChannelId)).block();
-        /*
-        Read User Data from preferences
-         */
+//        Read User Data from preferences
         data = TokuChanPreferencesManager.readUserdata(targetGuildId);
         if (data == null) {
             data = new HashMap<>();
@@ -69,16 +60,10 @@ public class TokuChanInstance {
                 });
     }
 
-    /**
-     * ユーザープロフィールデータを保存するための関数
-     */
+    //      ユーザープロフィールデータを保存
     private void saveConfig() {
         TokuChanPreferencesManager.saveData(targetGuildId, data);
     }
-
-    /* 古いプロフィールデータを取得してマージする。
-    新バージョンに移行するための一時的な関数
-     */
 
     private void run() {
         //このクラスはDMかつ!で始まらないメッセージを取得し、レスポンスを行う。
@@ -186,17 +171,6 @@ public class TokuChanInstance {
     }
 
     /**
-     * 過去にサーバーのメンテナンスメッセージを送信したかを確認する関数
-     * *****工事中******
-     *
-     * @return
-     */
-    private boolean seekMaintenanceMessage() {
-//        client.getRestClient().getChannelService().getMessages(targetChannel,)
-        return true;
-    }
-
-    /**
      * !whatsnewに対し、更新情報を返すための関数
      *
      * @param channel channel from which the command came
@@ -232,16 +206,9 @@ public class TokuChanInstance {
      * ButtonInteractionEvent
      * を処理する関数。
      *
-     * @param messageChannel channel from which the message came
-     * @param timestamp      timestamp for the message
-     * @return
+     * @param event     target ButtonInteractionEvent
+     * @param timestamp timestamp for the message
      */
-    private Message msgCancelDraft(MessageChannel messageChannel, Instant timestamp) {
-        return messageChannel.createMessage(EmbedCreateSpec.builder().title("送信を取り消しました")
-                .color(Color.DEEP_SEA)
-                .timestamp(timestamp).color(Color.RED)
-                .build()).block();
-    }
 
     private void handleMsgCancelDraft(ButtonInteractionEvent event, Instant timestamp) {
         event.edit().withEmbeds(EmbedCreateSpec.builder()
@@ -284,16 +251,6 @@ public class TokuChanInstance {
                 .build()).block();
     }
 
-    private Message msgSent(String content, MessageChannel channel, String mesID) {
-        return channel.createMessage(EmbedCreateSpec.builder()
-                        .title("送信完了しました")
-                        .description(content)
-                        .color(Color.GREEN)
-                        .build())
-                .withComponents(ActionRow.of(Button.secondary("wd-" + mesID, "送信取り消し")))
-                .block();
-    }
-
     //ButtonInteractionEvent用に設計されたイベントリスポンス
     private void handleMsgSent(String content, ButtonInteractionEvent event, String mesID) {
         event.edit().withEmbeds(EmbedCreateSpec.builder()
@@ -303,15 +260,6 @@ public class TokuChanInstance {
                         .build())
                 .withComponents(ActionRow.of(Button.secondary("wd-" + mesID, "送信取り消し")))
                 .block();
-    }
-
-    private MessageData msgWithdrew(String content, MessageChannel channel) {
-        return channel.getRestChannel().createMessage(
-                EmbedCreateSpec.builder()
-                        .title("メッセージを取り消しました")
-                        .description(content)
-                        .color(Color.BLUE)
-                        .build().asRequest()).block();
     }
 
     private void handleMsgWithdrew(ButtonInteractionEvent event) {
@@ -413,8 +361,8 @@ public class TokuChanInstance {
                         //もしかしたらInteractionがタイムアウトする可能性も..?
                         handleMsgSent(message, event, messageData.id().asString());
                     }).doOnError(throwable -> {
-                        logger.warning("ERROR");
-                        logger.warning(throwable.getMessage());
+                        logger.severe("ERROR");
+                        logger.severe(throwable.getMessage());
                     })
                     .block();
         } else {
