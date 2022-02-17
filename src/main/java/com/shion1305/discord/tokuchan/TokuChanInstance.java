@@ -163,11 +163,15 @@ public class TokuChanInstance {
                             logger.info("WD message received");
                             handleMsgWithdrew(event);
                             client.getMessageById(Snowflake.of(targetChannelId), Snowflake.of(customId.substring(3)))
-                                    .doOnError(Throwable::printStackTrace)
-                                    .subscribe(message -> {
+                                    .doOnError(throwable -> {
+                                        if (throwable.getMessage().contains(" returned 404 Not Found with response {code=10008,"))
+                                            logger.info("Message Not Found");
+                                        else throwable.printStackTrace();
+                                    })
+                                    .doOnSuccess(message -> {
                                         if (message.getEmbeds().get(0).getTitle().isEmpty()) return;
                                         message.delete().subscribe();
-                                    });
+                                    }).subscribe();
                         } else {
                             event.getMessage().get().delete().block();
                         }
