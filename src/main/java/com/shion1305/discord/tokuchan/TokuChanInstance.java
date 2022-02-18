@@ -12,9 +12,9 @@ import discord4j.core.object.entity.channel.Channel;
 import discord4j.core.object.entity.channel.MessageChannel;
 import discord4j.core.spec.EmbedCreateSpec;
 import discord4j.discordjson.json.MessageCreateRequest;
-import discord4j.discordjson.json.MessageData;
 import discord4j.rest.util.Color;
 import reactor.core.Disposable;
+import reactor.core.scheduler.Schedulers;
 
 import java.time.Instant;
 import java.util.*;
@@ -76,7 +76,9 @@ public class TokuChanInstance {
 
     private void run() {
         //このクラスはDMかつ!で始まらないメッセージを取得し、レスポンスを行う。
+
         processList.add(client.on(MessageCreateEvent.class)
+                .publishOn(Schedulers.boundedElastic())
                 .filter(event -> Objects.requireNonNull(event.getMessage().getChannel().block()).getType().getValue() == 1)
                 .filter(event -> event.getMessage().getAuthor().isPresent() && !event.getMessage().getAuthor().get().isBot() && !event.getMessage().getContent().startsWith("!"))
                 .subscribe(event -> {
@@ -105,7 +107,6 @@ public class TokuChanInstance {
                                         EmbedCreateSpec.builder().title("\"匿ちゃん\"へようこそ!!").color(Color.DISCORD_WHITE)
                                                 .description("やぁ!  匿名化BOTの匿ちゃんだよ!\n私にDMしてくれたら自動的に匿名チャンネルに転送するよ!\n送信取り消しも可能!\n質問しづらい事、答えにくい事、発言しつらい事などあったら気軽に使ってみてね!\n\nプロフィール(色/番号)は、いつでもリセットすることが可能です!")
                                                 .image("https://raw.githubusercontent.com/shion1305/TokuChanProject/master/src/main/webapp/TokuChanHTU2.3.png").build()).block();
-
                                 /*
                                  * Memo for how to send file.
                                  */
@@ -168,6 +169,7 @@ public class TokuChanInstance {
                                             logger.info("Message Not Found");
                                         else throwable.printStackTrace();
                                     })
+                                    .publishOn(Schedulers.boundedElastic())
                                     .doOnSuccess(message -> {
                                         if (message.getEmbeds().get(0).getTitle().isEmpty()) return;
                                         message.delete().subscribe();
@@ -185,10 +187,9 @@ public class TokuChanInstance {
      * !whatsnewに対し、更新情報を返すための関数
      *
      * @param channel channel from which the command came
-     * @return
      */
-    private MessageData msgWhatsNew(MessageChannel channel) {
-        return channel.getRestChannel().createMessage(
+    private void msgWhatsNew(MessageChannel channel) {
+        channel.getRestChannel().createMessage(
                 EmbedCreateSpec.builder()
                         .title("匿ちゃん RELEASE NOTE")
                         .description("匿ちゃんが新しくなりました!!!")
@@ -202,10 +203,9 @@ public class TokuChanInstance {
      *
      * @param msg            receivedMessage
      * @param messageChannel the channel from which it came
-     * @return
      */
-    private Message msgConfirm(Message msg, MessageChannel messageChannel) {
-        return messageChannel.createMessage(EmbedCreateSpec.builder()
+    private void msgConfirm(Message msg, MessageChannel messageChannel) {
+        messageChannel.createMessage(EmbedCreateSpec.builder()
                         .title("以下の内容で匿名チャンネルに投稿します。よろしいですか?")
                         .description(msg.getContent())
                         .color(Color.DEEP_SEA).build())
@@ -237,10 +237,9 @@ public class TokuChanInstance {
      * メッセージのインスタンスを返すための関数
      *
      * @param channel channel from which the message came
-     * @return prepared Message
      */
-    private Message msgOverloadNotify(MessageChannel channel) {
-        return channel.createMessage(
+    private void msgOverloadNotify(MessageChannel channel) {
+        channel.createMessage(
                 EmbedCreateSpec.builder()
                         .title("文字数オーバー")
                         .description("400文字以内でお願いします。").build()).block();
@@ -252,10 +251,9 @@ public class TokuChanInstance {
      * ButtonInteractionEvent用に設計されたイベントリスポンス
      *
      * @param channel channel from which the message came
-     * @return
      */
-    private Message msgIllegalNotify(MessageChannel channel) {
-        return channel.createMessage(EmbedCreateSpec.builder()
+    private void msgIllegalNotify(MessageChannel channel) {
+        channel.createMessage(EmbedCreateSpec.builder()
                 .title("無効なメッセージ")
                 .description("画像、動画や添付ファイル、または空のメッセージは送信できません。")
                 .color(Color.RED)
