@@ -282,8 +282,8 @@ public class TokuChanInstance {
     /**
      * Userはcom.shion1305.ynu_discord.tokuchan.Userのこと
      *
-     * @param user
-     * @return
+     * @param user target userId
+     * @return User with color and tmp data
      */
     private User getData(long user) {
         User userD = data.get(user);
@@ -297,8 +297,8 @@ public class TokuChanInstance {
 
 
     /**
-     * @param color
-     * @return
+     * @param color color you want to check duplication
+     * @return result of the check
      */
     private boolean duplicateColor(int color) {
         for (User user : data.values()) {
@@ -308,8 +308,8 @@ public class TokuChanInstance {
     }
 
     /**
-     * @param tmp
-     * @return
+     * @param tmp tmp number you want to check for
+     * @return the check result
      */
     private boolean duplicateTemp(int tmp) {
         for (User user : data.values()) {
@@ -322,7 +322,7 @@ public class TokuChanInstance {
      * ユーザーに対し
      * プロフィール色とプロフィール番号を付与する関数
      *
-     * @return
+     * @return User with their allocated color and tmp
      */
     private User allocate() {
         int color, tmp;
