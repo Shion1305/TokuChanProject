@@ -19,14 +19,15 @@ public class TokuChanManager implements ServletContextListener {
     @Override
     public void contextInitialized(ServletContextEvent sce) {
         try {
-
             ObjectMapper mapper = new ObjectMapper();
             logger.info(ConfigManager.getConfig("TokuChanConfigJson"));
             TokuChanData data = mapper.readValue(new File(ConfigManager.getConfig("TokuChanConfigJson")), TokuChanData.class);
-            if (data == null)
+            if (data == null) {
                 logger.severe("JsonConfig\"" + ConfigManager.getConfig("TokuChanConfigJson") + "\" is not loaded properly");
+                return;
+            }
             for (InstanceData instanceData : data.getInstances()) {
-                TokuChanInstance instance = new TokuChanInstance(instanceData.discordToken, instanceData.targetGuildId, instanceData.targetChannelId);
+                TokuChanInstance instance = new TokuChanInstance(instanceData.getDiscordToken(), instanceData.getTargetGuildId(), instanceData.getTargetChannelId());
                 instances.add(instance);
             }
         } catch (IOException e) {
