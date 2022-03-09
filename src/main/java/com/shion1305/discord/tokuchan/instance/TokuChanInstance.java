@@ -60,9 +60,7 @@ public class TokuChanInstance {
         channel = Objects.requireNonNull(client).getChannelById(Snowflake.of(targetChannelId)).block();
 //        Read User Data from preferences
         data = TokuChanPreferencesManager.readUserdata(targetGuildId);
-        if (data == null) {
-            data = new HashMap<>();
-        }
+        if (data == null) data = new HashMap<>();
         client.on(ReadyEvent.class)
                 .subscribe(reconnectEvent -> {
                     logger.info("CONNECT EVENT");
