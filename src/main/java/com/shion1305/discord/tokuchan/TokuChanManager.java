@@ -1,5 +1,6 @@
 package com.shion1305.discord.tokuchan;
 
+import com.fasterxml.jackson.databind.DeserializationFeature;
 import com.fasterxml.jackson.databind.ObjectMapper;
 
 import javax.servlet.ServletContextEvent;
@@ -27,6 +28,10 @@ public class TokuChanManager implements ServletContextListener {
                 return;
             }
             for (InstanceData instanceData : data.getInstances()) {
+                if (!instanceData.isValid()) {
+                    logger.info("Skipped loading InstanceData\"" + instanceData.name + "\" as it is invalid...");
+                    continue;
+                }
                 TokuChanInstance instance = new TokuChanInstance(instanceData.getDiscordToken(), instanceData.getTargetGuildId(), instanceData.getTargetChannelId());
                 instances.add(instance);
             }
