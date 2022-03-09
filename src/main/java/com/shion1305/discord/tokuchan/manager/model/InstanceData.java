@@ -1,4 +1,4 @@
-package com.shion1305.discord.tokuchan;
+package com.shion1305.discord.tokuchan.manager.model;
 
 import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
 import com.fasterxml.jackson.annotation.JsonProperty;

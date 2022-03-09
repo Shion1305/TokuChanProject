@@ -1,7 +1,9 @@
-package com.shion1305.discord.tokuchan;
+package com.shion1305.discord.tokuchan.manager;
 
-import com.fasterxml.jackson.databind.DeserializationFeature;
 import com.fasterxml.jackson.databind.ObjectMapper;
+import com.shion1305.discord.tokuchan.manager.model.InstanceData;
+import com.shion1305.discord.tokuchan.manager.model.TokuChanData;
+import com.shion1305.discord.tokuchan.instance.TokuChanInstance;
 
 import javax.servlet.ServletContextEvent;
 import javax.servlet.ServletContextListener;

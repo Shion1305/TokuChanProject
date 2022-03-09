@@ -1,4 +1,6 @@
-package com.shion1305.discord.tokuchan;
+package com.shion1305.discord.tokuchan.instance;
+
+import com.shion1305.discord.tokuchan.instance.model.User;
 
 import java.io.*;
 import java.util.HashMap;

@@ -1,4 +1,4 @@
-package com.shion1305.discord.tokuchan;
+package com.shion1305.discord.tokuchan.manager;
 
 import java.io.FileInputStream;
 import java.io.IOException;

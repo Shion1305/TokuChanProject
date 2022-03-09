@@ -1,4 +1,4 @@
-package com.shion1305.discord.tokuchan;
+package com.shion1305.discord.tokuchan.manager;
 
 import discord4j.core.DiscordClient;
 import discord4j.core.GatewayDiscordClient;
@@ -14,10 +14,10 @@ import java.util.logging.Logger;
  * Discordのキーを安全かつ効率的に管理するためのクラス
  * TokuChanHanlerインスタンスを呼び出す。
  */
-class TokuChanDiscordManager {
+public class TokuChanDiscordManager {
     private static HashMap<String, GatewayDiscordClient> clients;
     private static final Logger logger = Logger.getLogger("TokuChanDiscordManager");
-    static GatewayDiscordClient getClient(String token) {
+    public static GatewayDiscordClient getClient(String token) {
         logger.info("DiscordClient requested: " + token.substring(token.length() - 10));
         if (clients == null) {
             clients = new HashMap<>();

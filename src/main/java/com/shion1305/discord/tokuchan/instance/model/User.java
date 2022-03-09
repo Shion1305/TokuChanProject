@@ -1,12 +1,12 @@
-package com.shion1305.discord.tokuchan;
+package com.shion1305.discord.tokuchan.instance.model;
 
 import java.io.Serializable;
 
 public class User implements Serializable {
-    int color;
-    int tmp;
+    public final int color;
+    public final int tmp;
 
-    User(int color, int tmp) {
+    public User(int color, int tmp) {
         this.color = color;
         this.tmp = tmp;
     }

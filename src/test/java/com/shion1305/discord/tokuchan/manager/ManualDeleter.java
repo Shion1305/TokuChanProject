@@ -1,4 +1,4 @@
-package com.shion1305.discord.tokuchan;
+package com.shion1305.discord.tokuchan.manager;
 
 import discord4j.common.util.Snowflake;
 import discord4j.core.DiscordClient;

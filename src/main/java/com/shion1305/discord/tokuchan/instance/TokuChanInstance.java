@@ -1,5 +1,7 @@
-package com.shion1305.discord.tokuchan;
+package com.shion1305.discord.tokuchan.instance;
 
+import com.shion1305.discord.tokuchan.manager.TokuChanDiscordManager;
+import com.shion1305.discord.tokuchan.instance.model.User;
 import discord4j.common.util.Snowflake;
 import discord4j.core.GatewayDiscordClient;
 import discord4j.core.event.domain.interaction.ButtonInteractionEvent;
