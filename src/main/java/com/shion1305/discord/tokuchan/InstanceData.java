@@ -1,7 +1,9 @@
 package com.shion1305.discord.tokuchan;
 
+import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
 import com.fasterxml.jackson.annotation.JsonProperty;
 
+@JsonIgnoreProperties(ignoreUnknown = true)
 public class InstanceData {
     private final String discordToken;
     private final long targetGuildId, targetChannelId;
