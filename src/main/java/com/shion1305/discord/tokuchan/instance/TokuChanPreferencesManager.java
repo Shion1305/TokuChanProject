@@ -35,6 +35,8 @@ class TokuChanPreferencesManager {
                     for (Map.Entry<Long, com.shion1305.discord.tokuchan.User> entry : tmp.entrySet()) {
                         newData.put(entry.getKey(), UserConverter.convert(entry.getValue()));
                     }
+                    //migrate to new Data
+                    saveData(groupId, newData);
                     return newData;
                 }
             } catch (Exception e) {
