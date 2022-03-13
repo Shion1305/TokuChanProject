@@ -37,7 +37,6 @@ public class InstanceData {
         this.statusMessage = Objects.requireNonNullElse(statusMessage, "!introで使い方を確認! メッセージはDMで送信してね!");
     }
 
-
     public long getTargetChannelId() {
         return targetChannelId;
     }
@@ -56,5 +55,17 @@ public class InstanceData {
 
     public String getName() {
         return name;
+    }
+
+    @Override
+    public String toString() {
+        return "InstanceData{" +
+                "name='" + name + '\'' +
+                ", discordToken='" + discordToken + '\'' +
+                ", description='" + description + '\'' +
+                ", statusMessage='" + statusMessage + '\'' +
+                ", targetGuildId=" + targetGuildId +
+                ", targetChannelId=" + targetChannelId +
+                '}';
     }
 }
