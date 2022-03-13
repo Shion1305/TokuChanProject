@@ -3,5 +3,5 @@
 /.gradle/
 /.idea/
 IssueAndObjectives.md
-/configuration.json
-/configuration-1.json
+/configuration*.json
+!configuration_sample.json
