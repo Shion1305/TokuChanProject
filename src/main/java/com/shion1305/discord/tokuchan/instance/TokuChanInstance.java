@@ -2,6 +2,7 @@ package com.shion1305.discord.tokuchan.instance;
 
 import com.shion1305.discord.tokuchan.manager.TokuChanDiscordManager;
 import com.shion1305.discord.tokuchan.instance.model.User;
+import com.shion1305.discord.tokuchan.manager.model.InstanceData;
 import discord4j.common.util.Snowflake;
 import discord4j.core.GatewayDiscordClient;
 import discord4j.core.event.domain.interaction.ButtonInteractionEvent;
@@ -28,16 +29,15 @@ public class TokuChanInstance {
     //クライエントを保管する
     private final GatewayDiscordClient client;
     //プロフィール色などのユーザー情報を保持する
-    private HashMap<Long, User> data;
+    private HashMap<Long, User> userData;
     //対象のチャンネルID
-    private final long targetChannelId;
-    private final long targetGuildId;
     private final Channel channel;
     //プロフィール色の候補
     //These colors chosen picked by... https://mokole.com/palette.html
     int[] colors = new int[]{0x000000, 0x2f4f4f, 0x556b3f, 0xa0522d, 0x191970, 0x006400, 0x8b0000, 0x808000, 0x778899, 0x3cb371, 0x20b2aa, 0x00008b, 0xdaa520, 0x7f007f, 0xb03060, 0xd2b48c, 0xff4500, 0xff8c00, 0x0000cd, 0x00ff00, 0xffffff, 0xdc143c, 0x00bfff, 0xa020f0, 0xf08080, 0xadff2f, 0xff7f50, 0xff00ff, 0xf0e68c, 0xffff54, 0x6495ed, 0xdda00dd, 0xb0e0e6, 0x7b68ee, 0xee82ee, 0x98fb98, 0x7fffd4, 0xfff69b4, 0xffffe0, 0xffc0cb};
     //holds process to manage properly
     private final List<Disposable> processList = new ArrayList<>();
+    private final InstanceData data;
 
     /*
      * Instance終了時の関数
@@ -52,15 +52,14 @@ public class TokuChanInstance {
         logger.info("SYSTEM SHUTDOWN SEQUENCE SUCCESSFULLY ENDED");
     }
 
-    public TokuChanInstance(String token, long targetGuildId, long targetChannelId) {
-        logger.info("TokuChanHandler Started with " + targetChannelId);
-        this.targetChannelId = targetChannelId;
-        this.targetGuildId = targetGuildId;
-        client = TokuChanDiscordManager.getClient(token);
-        channel = Objects.requireNonNull(client).getChannelById(Snowflake.of(targetChannelId)).block();
+    public TokuChanInstance(InstanceData data) {
+        this.data = data;
+        logger.info("TokuChanHandler Started with " + data.getTargetChannelId());
+        client = TokuChanDiscordManager.getClient(data.getDiscordToken(), data.getStatusMessage());
+        channel = Objects.requireNonNull(client).getChannelById(Snowflake.of(data.getTargetChannelId())).block();
 //        Read User Data from preferences
-        data = TokuChanPreferencesManager.readUserdata(targetGuildId);
-        if (data == null) data = new HashMap<>();
+        this.userData = TokuChanPreferencesManager.readUserdata(data.getTargetGuildId());
+        if (this.userData == null) this.userData = new HashMap<>();
         client.on(ReadyEvent.class)
                 .subscribe(reconnectEvent -> {
                     logger.info("CONNECT EVENT");
@@ -71,7 +70,7 @@ public class TokuChanInstance {
 
     //      ユーザープロフィールデータを保存
     private void saveConfig() {
-        TokuChanPreferencesManager.saveData(targetGuildId, data);
+        TokuChanPreferencesManager.saveData(data.getTargetGuildId(), userData);
     }
 
     private void run() {
@@ -105,7 +104,7 @@ public class TokuChanInstance {
                             try {
                                 Objects.requireNonNull(event.getMessage().getChannel().block()).createMessage(
                                         EmbedCreateSpec.builder().title("\"匿ちゃん\"へようこそ!!").color(Color.DISCORD_WHITE)
-                                                .description("やぁ!  匿名化BOTの匿ちゃんだよ!\n私にDMしてくれたら自動的に匿名チャンネルに転送するよ!\n送信取り消しも可能!\n質問しづらい事、答えにくい事、発言しつらい事などあったら気軽に使ってみてね!\n\nプロフィール(色/番号)は、いつでもリセットすることが可能です!")
+                                                .description(data.getDescription())
                                                 .image("https://raw.githubusercontent.com/shion1305/TokuChanProject/master/src/main/webapp/TokuChanHTU2.3.png").build()).block();
                                 /*
                                  * Memo for how to send file.
@@ -137,7 +136,7 @@ public class TokuChanInstance {
         processList.add(client.on(MessageCreateEvent.class).filter(event -> event.getMessage().getContent().equals("!reset")).subscribe(event -> {
             try {
                 if (event.getMessage().getAuthor().isEmpty()) return;
-                data.remove(event.getMessage().getAuthor().get().getUserData().id().asLong());
+                userData.remove(event.getMessage().getAuthor().get().getUserData().id().asLong());
                 Objects.requireNonNull(event.getMessage().getChannel().block()).createMessage(
                         EmbedCreateSpec.builder().title("プロフィールをリセットしました!").color(Color.DISCORD_WHITE).build()).block();
             } catch (Exception e) {
@@ -163,7 +162,7 @@ public class TokuChanInstance {
                         } else if (customId.startsWith("wd-")) {
                             logger.info("WD message received");
                             handleMsgWithdrew(event);
-                            client.getMessageById(Snowflake.of(targetChannelId), Snowflake.of(customId.substring(3)))
+                            client.getMessageById(Snowflake.of(data.getTargetChannelId()), Snowflake.of(customId.substring(3)))
                                     .doOnError(throwable -> {
                                         if (throwable.getMessage().contains(" returned 404 Not Found with response {code=10008,"))
                                             logger.info("Message Not Found");
@@ -286,10 +285,10 @@ public class TokuChanInstance {
      * @return User with color and tmp data
      */
     private User getData(long user) {
-        User userD = data.get(user);
+        User userD = userData.get(user);
         if (userD == null) {
             userD = allocate();
-            data.put(user, userD);
+            userData.put(user, userD);
             saveConfig();
         }
         return userD;
@@ -301,7 +300,7 @@ public class TokuChanInstance {
      * @return result of the check
      */
     private boolean duplicateColor(int color) {
-        for (User user : data.values()) {
+        for (User user : userData.values()) {
             if (user.color == color) return true;
         }
         return false;
@@ -312,7 +311,7 @@ public class TokuChanInstance {
      * @return the check result
      */
     private boolean duplicateTemp(int tmp) {
-        for (User user : data.values()) {
+        for (User user : userData.values()) {
             if (user.tmp == tmp) return true;
         }
         return false;
@@ -329,7 +328,7 @@ public class TokuChanInstance {
         do {
             int r = new Random().nextInt(colors.length);
             color = colors[r % colors.length];
-            if (data.size() > 18) break;
+            if (userData.size() > 18) break;
         } while (duplicateColor(color));
         do {
             tmp = new Random().nextInt(999);

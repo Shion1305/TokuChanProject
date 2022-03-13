@@ -31,10 +31,10 @@ public class TokuChanManager implements ServletContextListener {
             }
             for (InstanceData instanceData : data.getInstances()) {
                 if (!instanceData.isValid()) {
-                    logger.info("Skipped loading InstanceData\"" + instanceData.name + "\" as it is invalid...");
+                    logger.info("Skipped loading InstanceData\"" + instanceData.getName() + "\" as it is invalid...");
                     continue;
                 }
-                TokuChanInstance instance = new TokuChanInstance(instanceData.getDiscordToken(), instanceData.getTargetGuildId(), instanceData.getTargetChannelId());
+                TokuChanInstance instance = new TokuChanInstance(instanceData);
                 instances.add(instance);
             }
         } catch (IOException e) {
