@@ -21,51 +21,33 @@ public class TokuChanManager implements ServletContextListener {
 
     @Override
     public void contextInitialized(ServletContextEvent sce) {
-        load();
-    }
-
-    protected static void load() {
-        TokuChanData data = readTokuChanData();
-        if (data == null) {
-            logger.severe("JsonConfig\"" + ConfigManager.getConfig("TokuChanConfigJson") + "\" is not loaded properly");
-            return;
-        }
-        for (InstanceData instanceData : data.getInstances()) {
-            if (!instanceData.isValid()) {
-                logger.info("Skipped loading InstanceData\"" + instanceData.getName() + "\" as it is invalid...");
-                continue;
-            }
-            TokuChanInstance instance = new TokuChanInstance(instanceData);
-            instances.add(instance);
-        }
-    }
-
-    protected static TokuChanData readTokuChanData() {
         try {
             ObjectMapper mapper = new ObjectMapper();
             logger.info(ConfigManager.getConfig("TokuChanConfigJson"));
-            return mapper.readValue(new File(ConfigManager.getConfig("TokuChanConfigJson")), TokuChanData.class);
+            TokuChanData data = mapper.readValue(new File(ConfigManager.getConfig("TokuChanConfigJson")), TokuChanData.class);
+            if (data == null) {
+                logger.severe("JsonConfig\"" + ConfigManager.getConfig("TokuChanConfigJson") + "\" is not loaded properly");
+                return;
+            }
+            for (InstanceData instanceData : data.getInstances()) {
+                if (!instanceData.isValid()) {
+                    logger.info("Skipped loading InstanceData\"" + instanceData.getName() + "\" as it is invalid...");
+                    continue;
+                }
+                TokuChanInstance instance = new TokuChanInstance(instanceData);
+                instances.add(instance);
+            }
         } catch (IOException e) {
+            logger.severe("ERROR OCCURRED DURING LOADING JSON_CONFIG");
             e.printStackTrace();
         }
-        return null;
-    }
-
-    public static void reload() {
-        stop();
-        load();
-    }
-
-    protected static void stop() {
-        for (TokuChanInstance i : instances) {
-            i.stop();
-        }
-        instances.clear();
     }
 
     @Override
     public void contextDestroyed(ServletContextEvent sce) {
-        stop();
+        for (TokuChanInstance i : instances) {
+            i.stop();
+        }
     }
 }
 
