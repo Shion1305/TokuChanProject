@@ -12,7 +12,7 @@ Bot用のアカウントキーを登録して、Botアカウントにメッセ�
 
 ## 使い方(ユーザー向け)
 
-## ![TokuChanHTU2.2.png](https://github.com/shion1305/TokuChanProject/blob/master/src/main/webapp/TokuChanHTU2.2.png?raw=true)
+## ![TokuChanHTU2.3.png](https://github.com/shion1305/TokuChanProject/blob/master/src/main/webapp/TokuChanHTU2.3.png?raw=true)
 
 ## 導入について
 
@@ -22,7 +22,7 @@ Bot用のアカウントキーを登録して、Botアカウントにメッセ�
 
 ## 更新情報
 
-![](https://github.com/shion1305/TokuChanProject/blob/master/src/main/webapp/TokuChanUpdate2.2.png?raw=true)
+![](https://github.com/shion1305/TokuChanProject/blob/master/src/main/webapp/TokuChanUpdate2.3.png?raw=true)
 
 ##レポジトリ主
 
