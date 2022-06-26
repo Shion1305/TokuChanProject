@@ -17,7 +17,7 @@ dependencies {
     testRuntimeOnly 'org.junit.jupiter:junit-jupiter-engine:5.8.2'
 
     implementation 'javax.servlet:javax.servlet-api:4.0.1'
-    implementation 'com.discord4j:discord4j-core:3.2.1'
+    implementation 'com.discord4j:discord4j-core:3.2.2'
 
 }
 
